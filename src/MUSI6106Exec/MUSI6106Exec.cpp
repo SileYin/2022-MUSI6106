@@ -33,22 +33,55 @@ int main(int argc, char* argv[])
 
     //////////////////////////////////////////////////////////////////////////////
     // parse command line arguments
- 
+    sInputFilePath = argv[1];
+    sOutputFilePath = argv[2];
+
+    cout << sInputFilePath << endl;
     //////////////////////////////////////////////////////////////////////////////
     // open the input wave file
- 
+    phAudioFile->create(phAudioFile);
+    phAudioFile->openFile(sInputFilePath, CAudioFileIf::kFileRead);
+    phAudioFile->getFileSpec(stFileSpec);
+
     //////////////////////////////////////////////////////////////////////////////
     // open the output text file
- 
+    hOutputFile.open(sOutputFilePath);
+    if (!hOutputFile.is_open()) {
+        cout << "Text File Read Error." << endl;
+        return -1;
+    }
+
     //////////////////////////////////////////////////////////////////////////////
     // allocate memory
- 
+
+    long long int numFrames = kBlockSize;
+    ppfAudioData = new float*[stFileSpec.iNumChannels];
+    for (int i = 0; i < stFileSpec.iNumChannels; i++) {
+        ppfAudioData[i] = new float[kBlockSize];
+    }
+    
     //////////////////////////////////////////////////////////////////////////////
     // get audio data and write it to the output text file (one column per channel)
+    while (numFrames == kBlockSize) {
+        phAudioFile->readData(ppfAudioData, numFrames);
+        for (int i = 0; i < numFrames; i++) {
+            for (int j = 0; j < stFileSpec.iNumChannels; j++) {
+                if (j != stFileSpec.iNumChannels - 1) {
+                    hOutputFile << ppfAudioData[j][i] << " ";
+                }
+                else {
+                    hOutputFile << ppfAudioData[j][i] << endl;
+                }
+            }
 
+        }
+    }
+    
     //////////////////////////////////////////////////////////////////////////////
     // clean-up (close files and free memory)
-
+    phAudioFile->destroy(phAudioFile);
+    hOutputFile.close();
+    delete[] ppfAudioData;
     // all done
     return 0;
 
