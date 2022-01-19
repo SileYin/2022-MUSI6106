@@ -81,6 +81,9 @@ int main(int argc, char* argv[])
     // clean-up (close files and free memory)
     phAudioFile->destroy(phAudioFile);
     hOutputFile.close();
+    for (int i = 0; i < stFileSpec.iNumChannels; i++) {
+        delete[] ppfAudioData[i];
+    }
     delete[] ppfAudioData;
     // all done
     return 0;
