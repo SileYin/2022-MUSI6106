@@ -31,8 +31,9 @@ int main(int argc, char* argv[])
 
     for (int i = 5; i < 30; i++)
     {
-        pCRingBuff->getNumValuesInBuffer(); // should be five
-        pCRingBuff->getPostInc(); // should be i-5
+        std::cout << i << " ";
+        std::cout << pCRingBuff->getNumValuesInBuffer() << " "; // should be five
+        std::cout << pCRingBuff->getPostInc() << std::endl; // should be i-5
         pCRingBuff->putPostInc(1.F*i);
     }
 
