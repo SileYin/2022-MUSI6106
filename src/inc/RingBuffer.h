@@ -79,7 +79,7 @@ public:
     {
         m_iReadIdx = 0;
         m_iWriteIdx = 0;
-        for (int i = 0; i < iBufferLengthInSamples; ++i)
+        for (int i = 0; i < m_iBuffLength; ++i)
         {
             m_ptBuff[i] = 0;
         }
@@ -99,7 +99,7 @@ public:
     */
     void setWriteIdx(int iNewWriteIdx)
     {
-        m_iWriteIdx = iNewWriteIdx
+        m_iWriteIdx = iNewWriteIdx;
     }
 
     /*! return the current index for reading/get
@@ -116,7 +116,7 @@ public:
     */
     void setReadIdx(int iNewReadIdx)
     {
-        m_iReadIdx = iNewReadIdx
+        m_iReadIdx = iNewReadIdx;
     }
 
     /*! returns the number of values currently buffered (note: 0 could also mean the buffer is full!)
@@ -124,7 +124,7 @@ public:
     */
     int getNumValuesInBuffer() const
     {
-        if (m_iReadIdx < m_iWriteIdx)
+        if (m_iReadIdx <= m_iWriteIdx)
         {
             return (m_iWriteIdx - m_iReadIdx);
         }
