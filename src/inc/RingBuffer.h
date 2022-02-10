@@ -30,6 +30,7 @@ public:
     virtual ~CRingBuffer()
     {
         delete [] m_ptBuff;
+        m_ptBuff = 0;
         // free memory
     }
 

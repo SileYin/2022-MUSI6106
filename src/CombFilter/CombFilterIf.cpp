@@ -8,6 +8,7 @@
 #include "Util.h"
 
 #include "CombFilterIf.h"
+#include "CombFilter.h"
 
 static const char*  kCMyProjectBuildDate = __DATE__;
 
@@ -56,31 +57,90 @@ const char*  CCombFilterIf::getBuildDate ()
 
 Error_t CCombFilterIf::create (CCombFilterIf*& pCCombFilter)
 {
+    pCCombFilter = new CCombFilterIf;
+    if (!pCCombFilter)
+        return Error_t::kMemError;
     return Error_t::kNoError;
 }
 
 Error_t CCombFilterIf::destroy (CCombFilterIf*& pCCombFilter)
 {
+    delete pCCombFilter;
+    pCCombFilter = 0;
     return Error_t::kNoError;
 }
 
 Error_t CCombFilterIf::init (CombFilterType_t eFilterType, float fMaxDelayLengthInS, float fSampleRateInHz, int iNumChannels)
 {
+    if (m_bIsInitialized)
+    {
+        return Error_t::kFunctionIllegalCallError;
+    }
+    int iDelayLength = static_cast<int>(fMaxDelayLengthInS / fSampleRateInHz);
+    if (eFilterType == CombFilterType_t::kCombFIR)
+    {
+        m_pCCombFilter = new CCombFIR(iDelayLength, iNumChannels);
+        m_bIsInitialized = true;
+    }
+    else if (eFilterType == CombFilterType_t::kCombIIR)
+    {
+        m_pCCombFilter = new CCombIIR(iDelayLength, iNumChannels);
+        m_bIsInitialized = true;
+    }
+    else
+    {
+        return Error_t::kFunctionInvalidArgsError;
+    }
     return Error_t::kNoError;
 }
 
 Error_t CCombFilterIf::reset ()
 {
+    if (!m_bIsInitialized)
+    {
+        return Error_t::kNotInitializedError;
+    }
+    delete m_pCCombFilter;
+    m_pCCombFilter = 0;
+    m_bIsInitialized = false;
     return Error_t::kNoError;
 }
 
 Error_t CCombFilterIf::process (float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames)
 {
+    if (!m_bIsInitialized)
+    {
+        return Error_t::kNotInitializedError;
+    }
+    assert(iNumberOfFrames > 0);
+    for (int i = 0; i < iNumberOfFrames; ++i)
+    {
+        m_pCCombFilter->combFilter(ppfInputBuffer, ppfOutputBuffer, iNumberOfFrames);
+    }
     return Error_t::kNoError;
 }
 
 Error_t CCombFilterIf::setParam (FilterParam_t eParam, float fParamValue)
 {
+    if (!m_bIsInitialized)
+    {
+        return Error_t::kNotInitializedError;
+    }
+    if (eParam == FilterParam_t::kParamGain)
+    {
+        assert(fabs(fParamValue) <= 1);
+        m_pCCombFilter->setGain(fParamValue);
+    }
+    else if (eParam == FilterParam_t::kParamDelay)
+    {
+        assert(fParamValue > 0);
+        int iDelayLength = static_cast<int>(fParamValue / m_fSampleRate);
+        m_pCCombFilter->setDelayLength(iDelayLength);
+    }
+    else
+    {
+        return Error_t::kFunctionInvalidArgsError;
+    }
     return Error_t::kNoError;
 }
 
