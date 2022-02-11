@@ -76,7 +76,7 @@ Error_t CCombFilterIf::init (CombFilterType_t eFilterType, float fMaxDelayLength
     {
         return Error_t::kFunctionIllegalCallError;
     }
-    int iDelayLength = static_cast<int>(fMaxDelayLengthInS / fSampleRateInHz);
+    int iDelayLength = static_cast<int>(fMaxDelayLengthInS * fSampleRateInHz);
     if (eFilterType == CombFilterType_t::kCombFIR)
     {
         m_pCCombFilter = new CCombFIR(iDelayLength, iNumChannels);

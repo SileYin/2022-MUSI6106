@@ -11,10 +11,12 @@ public:
 	Error_t setDelayLength(int iDelayInSample)
 	{
 		m_iDelayLength = iDelayInSample;
+		return Error_t::kNoError;
 	}
 	Error_t setGain(float g)
 	{
 		m_fGain = g;
+		return Error_t::kNoError;
 	}
 	int getDelayLength()
 	{
@@ -24,7 +26,7 @@ public:
 	{
 		return m_fGain;
 	}
-	virtual Error_t combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, int iNumberOfFrames);
+	virtual Error_t combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, int iNumberOfFrames) = 0;
 protected:
 	int m_iDelayLength;
 	float m_fGain;

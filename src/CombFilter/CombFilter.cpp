@@ -1,7 +1,7 @@
 #include "CombFilter.h"
 
 CCombFilterBase::CCombFilterBase(int iDelayInSamples, int iNumChannels)
-	:m_fGain(0)
+	:m_fGain(1)
 {
 	m_iDelayLength = iDelayInSamples;
 	m_iNumChannels = iNumChannels;
@@ -33,6 +33,7 @@ Error_t CCombFIR::combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, in
 			pCRingBuff[i]->putPostInc(ppfInputBuffer[i][j]);
 		}
 	}
+	return Error_t::kNoError;
 }
 
 Error_t CCombIIR::combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, int iNumberOfFrames)
@@ -45,4 +46,5 @@ Error_t CCombIIR::combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, in
 			pCRingBuff[i]->putPostInc(ppfOutputBuffer[i][j]);
 		}
 	}
+	return Error_t::kNoError;
 }
