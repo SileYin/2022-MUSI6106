@@ -76,6 +76,7 @@ Error_t CCombFilterIf::init (CombFilterType_t eFilterType, float fMaxDelayLength
     {
         return Error_t::kFunctionIllegalCallError;
     }
+    m_fSampleRate = fSampleRateInHz;
     int iDelayLength = static_cast<int>(fMaxDelayLengthInS * fSampleRateInHz);
     if (eFilterType == CombFilterType_t::kCombFIR)
     {
@@ -113,10 +114,7 @@ Error_t CCombFilterIf::process (float **ppfInputBuffer, float **ppfOutputBuffer,
         return Error_t::kNotInitializedError;
     }
     assert(iNumberOfFrames > 0);
-    for (int i = 0; i < iNumberOfFrames; ++i)
-    {
-        m_pCCombFilter->combFilter(ppfInputBuffer, ppfOutputBuffer, iNumberOfFrames);
-    }
+    m_pCCombFilter->combFilter(ppfInputBuffer, ppfOutputBuffer, iNumberOfFrames);
     return Error_t::kNoError;
 }
 
