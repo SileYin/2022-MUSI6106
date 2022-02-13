@@ -221,7 +221,7 @@ void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamp
     {
         for (int j = 0; j < iTestLength; j++)
         {
-            ppfInputTestSignal[i][j] = sin(2 * fMathPi / static_cast<float>(iCycleInSamples) * static_cast<float>(j));
+            ppfInputTestSignal[i][j] = cos(2 * fMathPi / static_cast<float>(iCycleInSamples) * static_cast<float>(j));
         }
     }
 
@@ -234,7 +234,7 @@ void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamp
         {
             for (int j = iCycleInSamples; j < iTestLength; j++)
             {
-                if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false;
+                if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false; // Should cancel out
             }
         }
     }
@@ -242,10 +242,14 @@ void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamp
     {
         for (int i = 0; i < iNumChannels; i++)
         {
-            for (int j = iCycleInSamples; j < iTestLength; j++)
+            double prev_gain = 1.0;
+            for (int j = iCycleInSamples ; j < iTestLength; j+= iCycleInSamples)
             {
-                if (abs(ppfInputTestSignal[i][j]) > 1e-4) 
-                    if (abs(ppfOutputTestSignal[i][j]/ppfInputTestSignal[i][j]) < 0.5) bTestPassedFlag = false;
+                if (ppfInputTestSignal[i][j] != 0.f)
+                {
+                    if (abs(ppfOutputTestSignal[i][j] / ppfInputTestSignal[i][j]) - prev_gain < 0.95) bTestPassedFlag = false; // Should increase every cycle
+                    prev_gain = abs(ppfOutputTestSignal[i][j] / ppfInputTestSignal[i][j]);
+                }
             }
         }
     }
@@ -301,7 +305,7 @@ void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleIn
     }
     for (int i = 0; i < 1024; i++)
     {
-        inputTestSequence[i] = sin(2 * fMathPi / static_cast<float>(iCycleInSamples) * static_cast<float>(i));
+        inputTestSequence[i] = cos(2 * fMathPi / static_cast<float>(iCycleInSamples) * static_cast<float>(i));
     }
 
     combFilterVaryTestBlock(phCombFilter, ppfInputTestSignal, ppfOutputTestSignal, inputTestSequence, outputTestSequence, iCurBlockHead, 32);
@@ -316,7 +320,7 @@ void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleIn
         {
             for (int j = iCycleInSamples; j < 1024; j++)
             {
-                if (abs(outputTestSequence[i][j]) > 1e-4) bTestPassedFlag = false;
+                if (abs(outputTestSequence[i][j]) > 1e-4) bTestPassedFlag = false; // Should cancel out
             }
         }
     }
@@ -324,10 +328,14 @@ void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleIn
     {
         for (int i = 0; i < 2; i++)
         {
-            for (int j = iCycleInSamples; j < 1024; j++)
+            double prev_gain = 1.0;
+            for (int j = iCycleInSamples * 1.5; j < 1024; j+= iCycleInSamples)
             {
                 if (inputTestSequence[j] != 0.f)
-                    if (abs(outputTestSequence[i][j] / inputTestSequence[j]) < 1) bTestPassedFlag = false;
+                {
+                    if (abs(outputTestSequence[i][j] / inputTestSequence[j]) - prev_gain < 0.95) bTestPassedFlag = false; // Should increase every cycle
+                    prev_gain = abs(outputTestSequence[i][j] / inputTestSequence[j]);
+                }
             }
         }
     }
@@ -419,7 +427,7 @@ void testZeroInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSamp
     {
         for (int j =0; j < iTestLength; j++)
         {
-            if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false;
+            if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false; // Zero input should get zero output
         }
     }
 
@@ -489,7 +497,7 @@ void testDCInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample
         {
             for (int j = 100; j < iTestLength; j++)
             {
-                if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false;
+                if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false; // Should be zero
             }
         }
 
@@ -500,7 +508,7 @@ void testDCInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample
         {
             for (int j = 100; j < iTestLength; j++)
             {
-                if (abs(ppfOutputTestSignal[i][j]) < 0.9) bTestPassedFlag = false;
+                if (abs(ppfOutputTestSignal[i][j]) < 0.9) bTestPassedFlag = false; // Should be a large number
             }
         }
 
