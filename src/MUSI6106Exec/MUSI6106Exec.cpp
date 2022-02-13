@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
         phInputAudioFile->readData(ppfInputAudioData, iNumFrames);
         phCombFilter->process(ppfInputAudioData, ppfOutputAudioData, kBlockSize);
         phOutputAudioFile->writeData(ppfOutputAudioData, iNumFrames);
-        cout << "time ellapsed: " << (clock() - time) * 1.F / CLOCKS_PER_SEC << "s." << endl;
+        cout << "time elapsed: " << (clock() - time) * 1.F / CLOCKS_PER_SEC << "s." << endl;
     }
 
     cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
