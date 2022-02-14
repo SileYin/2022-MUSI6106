@@ -113,6 +113,10 @@ Error_t CCombFilterIf::process (float **ppfInputBuffer, float **ppfOutputBuffer,
     {
         return Error_t::kNotInitializedError;
     }
+    if (!ppfInputBuffer || !ppfOutputBuffer)
+    {
+        return Error_t::kMemError;
+    }
     assert(iNumberOfFrames > 0);
     m_pCCombFilter->combFilter(ppfInputBuffer, ppfOutputBuffer, iNumberOfFrames);
     return Error_t::kNoError;
