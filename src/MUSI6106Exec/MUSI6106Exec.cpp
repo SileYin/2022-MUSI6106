@@ -38,7 +38,8 @@ int main(int argc, char* argv[])
     {
         std::cout << i << " ";
         std::cout << pCRingBuff->getNumValuesInBuffer() << " "; // should be five
-        std::cout << pCRingBuff->getPostInc() << std::endl; // should be i-5
+        std::cout << pCRingBuff->getPostInc() << " "; // should be i-5
+        std::cout << pCRingBuff->get(-0.5) << std::endl;
         pCRingBuff->putPostInc(1.F*i);
     }
 

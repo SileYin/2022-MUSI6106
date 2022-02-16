@@ -67,9 +67,23 @@ public:
     /*! return the value at the current read index
     \return float the value from the read index
     */
+    /*
     T get() const
     {
         return static_cast<T>(m_ptBuff[m_iReadIdx]);
+    }
+    */
+
+    /*! return the value at the current read index
+    \param fOffset: read at offset from read index
+    \return float the value from the read index
+    */
+    T get(float fOffset = 0) const
+    {
+        int l_iIdx = (m_iReadIdx + static_cast<int>(floor(fOffset))) % m_iBuffLength;
+        float l_fOffset = fOffset - floor(fOffset);
+        assert(l_fOffset >= 0 && l_fOffset < 1);
+        return static_cast<T>(m_ptBuff[l_iIdx] + l_fOffset * (m_ptBuff[(l_iIdx + 1) % m_iBuffLength] - m_ptBuff[l_iIdx]));
     }
     
     /*! set buffer content and indices to 0
