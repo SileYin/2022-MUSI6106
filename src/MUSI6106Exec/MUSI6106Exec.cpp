@@ -12,7 +12,7 @@ using std::endl;
 
 // local function declarations
 void    showClInfo ();
-void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamples = 100, int iNumChannels = 2, int iTestLength = 1024, int iSampleRateInHz = 44100);
+void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iMaxDelayLength = 1000, int iCycleInSamples = 100, int iNumChannels = 2, int iTestLength = 1024, int iSampleRateInHz = 44100);
 void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamples = 100, int iSampleRateInHz = 44100);
 void combFilterVaryTestBlock(CCombFilterIf* phCombFilter, float** &ppfInputTestSignal, float** &ppfOutputTestSignal, const float* inputTestSequence, float** outputTestSequence, int& iCurBlockHead, int iBlockLength);
 void testZeroInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample = 50, int iNumChannels = 2, int iTestLength = 1024, int iSampleRateInHz = 44100);
@@ -184,7 +184,7 @@ void     showClInfo()
     return;
 }
 
-void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamples, int iNumChannels, int iTestLength, int iSampleRateInHz)
+void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iMaxDelayLength, int iCycleInSamples, int iNumChannels, int iTestLength, int iSampleRateInHz)
 {
     if (eFilterType == CCombFilterIf::kCombFIR) 
     {
@@ -208,7 +208,8 @@ void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamp
     ppfOutputTestSignal = new float* [iNumChannels];
     for (int i = 0; i < iNumChannels; i++)
         ppfOutputTestSignal[i] = new float[iTestLength];
-    phCombFilter->init(eFilterType, static_cast<float>(iCycleInSamples) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), iNumChannels);
+    phCombFilter->init(eFilterType, static_cast<float>(iMaxDelayLength) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), iNumChannels);
+    phCombFilter->setParam(CCombFilterIf::kParamDelay, static_cast<float>(iCycleInSamples) / static_cast<float>(iSampleRateInHz));
     if (eFilterType == CCombFilterIf::kCombFIR)
     {
         phCombFilter->setParam(CCombFilterIf::kParamGain, -1);

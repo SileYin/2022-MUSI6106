@@ -65,6 +65,8 @@ Error_t CCombFilterIf::create (CCombFilterIf*& pCCombFilter)
 
 Error_t CCombFilterIf::destroy (CCombFilterIf*& pCCombFilter)
 {
+    if (pCCombFilter->m_bIsInitialized)
+        pCCombFilter->reset();
     delete pCCombFilter;
     pCCombFilter = 0;
     return Error_t::kNoError;
@@ -77,15 +79,15 @@ Error_t CCombFilterIf::init (CombFilterType_t eFilterType, float fMaxDelayLength
         return Error_t::kFunctionIllegalCallError;
     }
     m_fSampleRate = fSampleRateInHz;
-    int iDelayLength = static_cast<int>(fMaxDelayLengthInS * fSampleRateInHz);
+    int iMaxDelayLength = static_cast<int>(fMaxDelayLengthInS * fSampleRateInHz);
     if (eFilterType == CombFilterType_t::kCombFIR)
     {
-        m_pCCombFilter = new CCombFIR(iDelayLength, iNumChannels);
+        m_pCCombFilter = new CCombFIR(iMaxDelayLength, iNumChannels);
         m_bIsInitialized = true;
     }
     else if (eFilterType == CombFilterType_t::kCombIIR)
     {
-        m_pCCombFilter = new CCombIIR(iDelayLength, iNumChannels);
+        m_pCCombFilter = new CCombIIR(iMaxDelayLength, iNumChannels);
         m_bIsInitialized = true;
     }
     else
@@ -136,7 +138,7 @@ Error_t CCombFilterIf::setParam (FilterParam_t eParam, float fParamValue)
     else if (eParam == FilterParam_t::kParamDelay)
     {
         assert(fParamValue > 0);
-        int iDelayLength = static_cast<int>(fParamValue / m_fSampleRate);
+        int iDelayLength = static_cast<int>(fParamValue * m_fSampleRate);
         m_pCCombFilter->setDelayLength(iDelayLength);
     }
     else

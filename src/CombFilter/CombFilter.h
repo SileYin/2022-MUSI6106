@@ -8,26 +8,23 @@ class CCombFilterBase
 public:
 	CCombFilterBase(int, int);
 	~CCombFilterBase();
-	Error_t setDelayLength(int iDelayInSample)
-	{
-		m_iDelayLength = iDelayInSample;
-		return Error_t::kNoError;
-	}
+	Error_t CCombFilterBase::setDelayLength(int iDelayInSample);
 	Error_t setGain(float g)
 	{
 		m_fGain = g;
 		return Error_t::kNoError;
 	}
-	int getDelayLength()
+	int getDelayLength() const
 	{
 		return m_iDelayLength;
 	}
-	float getGainValue()
+	float getGainValue() const
 	{
 		return m_fGain;
 	}
 	virtual Error_t combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, int iNumberOfFrames) = 0;
 protected:
+	int m_iMaxDelayLength;
 	int m_iDelayLength;
 	float m_fGain;
 	int m_iNumChannels;
