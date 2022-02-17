@@ -1,7 +1,7 @@
 
 #include <iostream>
 #include <ctime>
-
+#include <cmath>
 #include "MUSI6106Config.h"
 
 #include "AudioFileIf.h"
@@ -12,23 +12,36 @@ using std::endl;
 
 // local function declarations
 void    showClInfo ();
+void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iMaxDelayLength = 1000, int iCycleInSamples = 100, int iNumChannels = 2, int iTestLength = 1024, int iSampleRateInHz = 44100);
+void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamples = 100, int iSampleRateInHz = 44100);
+void combFilterVaryTestBlock(CCombFilterIf* phCombFilter, float** &ppfInputTestSignal, float** &ppfOutputTestSignal, const float* inputTestSequence, float** outputTestSequence, int& iCurBlockHead, int iBlockLength);
+void testZeroInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample = 50, int iNumChannels = 2, int iTestLength = 1024, int iSampleRateInHz = 44100);
+void testDCInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample = 1, int iNumChannels = 2, int iTestLength = 1024, int iSampleRateInHz = 44100);
 
 /////////////////////////////////////////////////////////////////////////////////
 // main function
 int main(int argc, char* argv[])
 {
     std::string sInputFilePath,                 //!< file paths
-                sOutputFilePath;
+                sOutputFilePath,
+                sCombFilterType;
+
+    float fCombFilterGain, fCombFilterDelayInS;
+
 
     static const int kBlockSize = 1024;
 
     clock_t time = 0;
 
-    float **ppfAudioData = 0;
+    float **ppfInputAudioData = 0;
+    float **ppfOutputAudioData = 0;
 
-    CAudioFileIf *phAudioFile = 0;
+    CAudioFileIf *phInputAudioFile = 0;
+    CAudioFileIf *phOutputAudioFile = 0;
     std::fstream hOutputFile;
     CAudioFileIf::FileSpec_t stFileSpec;
+
+    CCombFilterIf* phCombFilter = 0;
 
     showClInfo();
 
@@ -36,93 +49,126 @@ int main(int argc, char* argv[])
     // parse command line arguments
     if (argc < 2)
     {
-        cout << "Missing audio input path!";
-        return -1;
+        cout << "No arguments inputed, running tests." << endl;
+        testFreqMatch(CCombFilterIf::kCombFIR);
+        testFreqMatch(CCombFilterIf::kCombIIR);
+        testVaryBlockSize(CCombFilterIf::kCombFIR);
+        testVaryBlockSize(CCombFilterIf::kCombIIR);
+        testZeroInput(CCombFilterIf::kCombFIR);
+        testZeroInput(CCombFilterIf::kCombIIR);
+        testDCInput(CCombFilterIf::kCombFIR);
+        testDCInput(CCombFilterIf::kCombIIR);
+        return 0;
+    }
+    else if (argc == 6)
+    {
+        sInputFilePath = argv[1];
+        sOutputFilePath = argv[2];
+        sCombFilterType = argv[3];
+        fCombFilterDelayInS = std::stof(argv[4]);
+        fCombFilterGain = std::stof(argv[5]);
     }
     else
     {
-        sInputFilePath = argv[1];
-        sOutputFilePath = sInputFilePath + ".txt";
+        cout << "Not enough arguments." << endl;
+        return -1;
     }
 
     //////////////////////////////////////////////////////////////////////////////
     // open the input wave file
-    CAudioFileIf::create(phAudioFile);
-    phAudioFile->openFile(sInputFilePath, CAudioFileIf::kFileRead);
-    if (!phAudioFile->isOpen())
+    CAudioFileIf::create(phInputAudioFile);
+    phInputAudioFile->openFile(sInputFilePath, CAudioFileIf::kFileRead);
+    if (!phInputAudioFile->isOpen())
     {
-        cout << "Wave file open error!";
-        CAudioFileIf::destroy(phAudioFile);
+        cout << "Input wave file open error!";
+        CAudioFileIf::destroy(phInputAudioFile);
         return -1;
     }
-    phAudioFile->getFileSpec(stFileSpec);
+    phInputAudioFile->getFileSpec(stFileSpec);
 
     //////////////////////////////////////////////////////////////////////////////
-    // open the output text file
-    hOutputFile.open(sOutputFilePath.c_str(), std::ios::out);
-    if (!hOutputFile.is_open())
+    // create and open the output wave file
+    hOutputFile.open(sOutputFilePath, std::ios::out | std::ios::app);
+    hOutputFile.close();
+    CAudioFileIf::create(phOutputAudioFile);
+    phOutputAudioFile->openFile(sOutputFilePath, CAudioFileIf::kFileWrite, &stFileSpec);
+    if (!phOutputAudioFile->isOpen())
     {
-        cout << "Text file open error!";
-        CAudioFileIf::destroy(phAudioFile);
+        cout << "Output wave file open error!";
+        CAudioFileIf::destroy(phInputAudioFile);
+        CAudioFileIf::destroy(phOutputAudioFile);
         return -1;
     }
+
+    //////////////////////////////////////////////////////////////////////////////
+    // create comb filter instance
+    CCombFilterIf::create(phCombFilter);
+    if (sCombFilterType == "FIR")
+    {
+        phCombFilter->init(CCombFilterIf::kCombFIR, fCombFilterDelayInS, stFileSpec.fSampleRateInHz, stFileSpec.iNumChannels);
+    }
+    else if (sCombFilterType == "IIR")
+    {
+        phCombFilter->init(CCombFilterIf::kCombIIR, fCombFilterDelayInS, stFileSpec.fSampleRateInHz, stFileSpec.iNumChannels);
+    }
+    else
+    {
+        cout << "Unknown filter type, defaulting FIR." << endl;
+        phCombFilter->init(CCombFilterIf::kCombFIR, fCombFilterDelayInS, stFileSpec.fSampleRateInHz, stFileSpec.iNumChannels);
+    }
+    phCombFilter->setParam(CCombFilterIf::kParamGain, fCombFilterGain);
 
     //////////////////////////////////////////////////////////////////////////////
     // allocate memory
-    ppfAudioData = new float*[stFileSpec.iNumChannels];
+    ppfInputAudioData = new float*[stFileSpec.iNumChannels];
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
-        ppfAudioData[i] = new float[kBlockSize];
+        ppfInputAudioData[i] = new float[kBlockSize];
+    ppfOutputAudioData = new float* [stFileSpec.iNumChannels];
+    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+        ppfOutputAudioData[i] = new float[kBlockSize];
 
-    if (ppfAudioData == 0)
+    if ((ppfInputAudioData == 0)||(ppfOutputAudioData == 0))
     {
-        CAudioFileIf::destroy(phAudioFile);
-        hOutputFile.close();
+        CAudioFileIf::destroy(phInputAudioFile);
+        CAudioFileIf::destroy(phOutputAudioFile);
         return -1;
     }
-    if (ppfAudioData[0] == 0)
+    if ((ppfInputAudioData[0] == 0)||(ppfOutputAudioData[0] == 0))
     {
-        CAudioFileIf::destroy(phAudioFile);
-        hOutputFile.close();
+        CAudioFileIf::destroy(phInputAudioFile);
+        CAudioFileIf::destroy(phOutputAudioFile);
         return -1;
     }
-
     time = clock();
 
     //////////////////////////////////////////////////////////////////////////////
     // get audio data and write it to the output text file (one column per channel)
-    while (!phAudioFile->isEof())
+    while (!phInputAudioFile->isEof())
     {
         // set block length variable
         long long iNumFrames = kBlockSize;
-
-        // read data (iNumOfFrames might be updated!)
-        phAudioFile->readData(ppfAudioData, iNumFrames);
-
-        cout << "\r" << "reading and writing";
-
-        // write
-        for (int i = 0; i < iNumFrames; i++)
-        {
-            for (int c = 0; c < stFileSpec.iNumChannels; c++)
-            {
-                hOutputFile << ppfAudioData[c][i] << "\t";
-            }
-            hOutputFile << endl;
-        }
+        phInputAudioFile->readData(ppfInputAudioData, iNumFrames);
+        phCombFilter->process(ppfInputAudioData, ppfOutputAudioData, kBlockSize);
+        phOutputAudioFile->writeData(ppfOutputAudioData, iNumFrames);
+        cout << "time elapsed: " << (clock() - time) * 1.F / CLOCKS_PER_SEC << "s." << endl;
     }
 
     cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
 
     //////////////////////////////////////////////////////////////////////////////
     // clean-up (close files and free memory)
-    CAudioFileIf::destroy(phAudioFile);
-    hOutputFile.close();
+    CCombFilterIf::destroy(phCombFilter);
+    CAudioFileIf::destroy(phInputAudioFile);
+    CAudioFileIf::destroy(phOutputAudioFile);
 
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
-        delete[] ppfAudioData[i];
-    delete[] ppfAudioData;
-    ppfAudioData = 0;
-
+        delete[] ppfInputAudioData[i];
+    delete[] ppfInputAudioData;
+    ppfInputAudioData = 0;
+    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+        delete[] ppfOutputAudioData[i];
+    delete[] ppfOutputAudioData;
+    ppfOutputAudioData = 0;
     // all done
     return 0;
 
@@ -138,3 +184,350 @@ void     showClInfo()
     return;
 }
 
+void testFreqMatch(CCombFilterIf::CombFilterType_t eFilterType, int iMaxDelayLength, int iCycleInSamples, int iNumChannels, int iTestLength, int iSampleRateInHz)
+{
+    if (eFilterType == CCombFilterIf::kCombFIR) 
+    {
+        cout << "Running FIR comb filter frequency match test... ";
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR) 
+    {
+        cout << "Running IIR comb filter frequency match test... ";
+    }
+    const float fMathPi = 3.14159265358979f;
+    bool bTestPassedFlag = true;
+    float** ppfInputTestSignal;
+    float** ppfOutputTestSignal;
+    CCombFilterIf* phCombFilter = 0;
+
+
+    CCombFilterIf::create(phCombFilter);
+    ppfInputTestSignal = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+        ppfInputTestSignal[i] = new float[iTestLength];
+    ppfOutputTestSignal = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+        ppfOutputTestSignal[i] = new float[iTestLength];
+    phCombFilter->init(eFilterType, static_cast<float>(iMaxDelayLength) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), iNumChannels);
+    phCombFilter->setParam(CCombFilterIf::kParamDelay, static_cast<float>(iCycleInSamples) / static_cast<float>(iSampleRateInHz));
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        phCombFilter->setParam(CCombFilterIf::kParamGain, -1);
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        phCombFilter->setParam(CCombFilterIf::kParamGain, 1);
+    }
+    for (int i = 0; i < iNumChannels; i++)
+    {
+        for (int j = 0; j < iTestLength; j++)
+        {
+            ppfInputTestSignal[i][j] = cos(2 * fMathPi / static_cast<float>(iCycleInSamples) * static_cast<float>(j));
+        }
+    }
+
+    phCombFilter->process(ppfInputTestSignal, ppfOutputTestSignal, iTestLength);
+
+
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        for (int i = 0; i < iNumChannels; i++)
+        {
+            for (int j = iCycleInSamples; j < iTestLength; j++)
+            {
+                if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false; // Should cancel out
+            }
+        }
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        for (int i = 0; i < iNumChannels; i++)
+        {
+            double prev_gain = 1.0;
+            for (int j = iCycleInSamples ; j < iTestLength; j+= iCycleInSamples)
+            {
+                if (ppfInputTestSignal[i][j] != 0.f)
+                {
+                    if (abs(ppfOutputTestSignal[i][j] / ppfInputTestSignal[i][j]) - prev_gain < 0.95) bTestPassedFlag = false; // Should increase every cycle
+                    prev_gain = abs(ppfOutputTestSignal[i][j] / ppfInputTestSignal[i][j]);
+                }
+            }
+        }
+    }
+    CCombFilterIf::destroy(phCombFilter);
+    for (int i = 0; i < iNumChannels; i++)
+        delete[] ppfInputTestSignal[i];
+    delete[] ppfInputTestSignal;
+    for(int i = 0; i < iNumChannels; i++)
+        delete[] ppfOutputTestSignal[i];
+    delete[] ppfOutputTestSignal;
+    if (bTestPassedFlag)
+    {
+        cout << "passed!" << endl;
+    }
+    else
+    {
+        cout << "not passed." << endl;
+    }
+}
+
+void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleInSamples, int iSampleRateInHz)
+{
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        cout << "Running FIR comb filter vary block size frequency match test... ";
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        cout << "Running IIR comb filter vary block size frequency match test... ";
+    }
+    const float fMathPi = 3.14159265358979f;
+    bool bTestPassedFlag = true;
+    float inputTestSequence[1024];
+    float** outputTestSequence;
+    int iCurBlockHead = 0;
+    float** ppfInputTestSignal;
+    float** ppfOutputTestSignal;
+    CCombFilterIf* phCombFilter = 0;
+
+    outputTestSequence = new float* [2];
+    for (int i = 0; i < 2; i++)
+        outputTestSequence[i] = new float[1024];
+
+    CCombFilterIf::create(phCombFilter);
+    phCombFilter->init(eFilterType, static_cast<float>(iCycleInSamples) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), 2);
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        phCombFilter->setParam(CCombFilterIf::kParamGain, -1);
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        phCombFilter->setParam(CCombFilterIf::kParamGain, 1);
+    }
+    for (int i = 0; i < 1024; i++)
+    {
+        inputTestSequence[i] = cos(2 * fMathPi / static_cast<float>(iCycleInSamples) * static_cast<float>(i));
+    }
+
+    combFilterVaryTestBlock(phCombFilter, ppfInputTestSignal, ppfOutputTestSignal, inputTestSequence, outputTestSequence, iCurBlockHead, 32);
+    combFilterVaryTestBlock(phCombFilter, ppfInputTestSignal, ppfOutputTestSignal, inputTestSequence, outputTestSequence, iCurBlockHead, 32);
+    combFilterVaryTestBlock(phCombFilter, ppfInputTestSignal, ppfOutputTestSignal, inputTestSequence, outputTestSequence, iCurBlockHead, 64);
+    combFilterVaryTestBlock(phCombFilter, ppfInputTestSignal, ppfOutputTestSignal, inputTestSequence, outputTestSequence, iCurBlockHead, 128);
+    combFilterVaryTestBlock(phCombFilter, ppfInputTestSignal, ppfOutputTestSignal, inputTestSequence, outputTestSequence, iCurBlockHead, 768);
+
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            for (int j = iCycleInSamples; j < 1024; j++)
+            {
+                if (abs(outputTestSequence[i][j]) > 1e-4) bTestPassedFlag = false; // Should cancel out
+            }
+        }
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            double prev_gain = 1.0;
+            for (int j = iCycleInSamples * 1.5; j < 1024; j+= iCycleInSamples)
+            {
+                if (inputTestSequence[j] != 0.f)
+                {
+                    if (abs(outputTestSequence[i][j] / inputTestSequence[j]) - prev_gain < 0.95) bTestPassedFlag = false; // Should increase every cycle
+                    prev_gain = abs(outputTestSequence[i][j] / inputTestSequence[j]);
+                }
+            }
+        }
+    }
+    CCombFilterIf::destroy(phCombFilter);
+    for (int i = 0; i < 2; i++)
+        delete[] outputTestSequence[i];
+    delete[] outputTestSequence;
+    if (bTestPassedFlag)
+    {
+        cout << "passed!" << endl;
+    }
+    else
+    {
+        cout << "not passed." << endl;
+    }
+}
+
+void combFilterVaryTestBlock(CCombFilterIf* phCombFilter, float** &ppfInputTestSignal, float** &ppfOutputTestSignal, const float* inputTestSequence, float** outputTestSequence, int& iCurBlockHead, int iBlockLength)
+{
+    ppfInputTestSignal = new float* [2];
+    for (int i = 0; i < 2; i++)
+        ppfInputTestSignal[i] = new float[iBlockLength];
+    ppfOutputTestSignal = new float* [2];
+    for (int i = 0; i < 2; i++)
+        ppfOutputTestSignal[i] = new float[iBlockLength];
+
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < iBlockLength; j++)
+        {
+            ppfInputTestSignal[i][j] = inputTestSequence[j + iCurBlockHead];
+        }
+    }
+    phCombFilter->process(ppfInputTestSignal, ppfOutputTestSignal, iBlockLength);
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < iBlockLength; j++)
+        {
+            outputTestSequence[i][j + iCurBlockHead] = ppfOutputTestSignal[i][j];
+        }
+    }
+
+    for (int i = 0; i < 2; i++)
+        delete[] ppfInputTestSignal[i];
+    delete[] ppfInputTestSignal;
+    for (int i = 0; i < 2; i++)
+        delete[] ppfOutputTestSignal[i];
+    delete[] ppfOutputTestSignal;
+    iCurBlockHead += iBlockLength;
+}
+
+void testZeroInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample, int iNumChannels, int iTestLength, int iSampleRateInHz)
+{
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        cout << "Running FIR comb filter zero input test... ";
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        cout << "Running IIR comb filter zero input test... ";
+    }
+    bool bTestPassedFlag = true;
+    float** ppfInputTestSignal;
+    float** ppfOutputTestSignal;
+    CCombFilterIf* phCombFilter = 0;
+
+
+    CCombFilterIf::create(phCombFilter);
+    ppfInputTestSignal = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+        ppfInputTestSignal[i] = new float[iTestLength];
+    ppfOutputTestSignal = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+        ppfOutputTestSignal[i] = new float[iTestLength];
+    phCombFilter->init(eFilterType, static_cast<float>(iDelayInSample) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), iNumChannels);
+    for (int i = 0; i < iNumChannels; i++)
+    {
+        for (int j = 0; j < iTestLength; j++)
+        {
+            ppfInputTestSignal[i][j] = 0;
+        }
+    }
+
+    phCombFilter->process(ppfInputTestSignal, ppfOutputTestSignal, iTestLength);
+
+
+
+    for (int i = 0; i < iNumChannels; i++)
+    {
+        for (int j =0; j < iTestLength; j++)
+        {
+            if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false; // Zero input should get zero output
+        }
+    }
+
+    CCombFilterIf::destroy(phCombFilter);
+    for (int i = 0; i < iNumChannels; i++)
+        delete[] ppfInputTestSignal[i];
+    delete[] ppfInputTestSignal;
+    for (int i = 0; i < iNumChannels; i++)
+        delete[] ppfOutputTestSignal[i];
+    delete[] ppfOutputTestSignal;
+    if (bTestPassedFlag)
+    {
+        cout << "passed!" << endl;
+    }
+    else
+    {
+        cout << "not passed." << endl;
+    }
+}
+
+void testDCInput(CCombFilterIf::CombFilterType_t eFilterType, int iDelayInSample, int iNumChannels, int iTestLength, int iSampleRateInHz)
+{
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        cout << "Running FIR comb filter DC removal test... ";
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        cout << "Running IIR comb filter DC estimator test... ";
+    }
+    bool bTestPassedFlag = true;
+    float** ppfInputTestSignal;
+    float** ppfOutputTestSignal;
+    CCombFilterIf* phCombFilter = 0;
+
+
+    CCombFilterIf::create(phCombFilter);
+    ppfInputTestSignal = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+        ppfInputTestSignal[i] = new float[iTestLength];
+    ppfOutputTestSignal = new float* [iNumChannels];
+    for (int i = 0; i < iNumChannels; i++)
+        ppfOutputTestSignal[i] = new float[iTestLength];
+    phCombFilter->init(eFilterType, static_cast<float>(iDelayInSample) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), iNumChannels);
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        phCombFilter->setParam(CCombFilterIf::kParamGain, -1.0f);
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        phCombFilter->setParam(CCombFilterIf::kParamGain, .95f);
+    }
+    for (int i = 0; i < iNumChannels; i++)
+    {
+        for (int j = 0; j < iTestLength; j++)
+        {
+            ppfInputTestSignal[i][j] = 1;
+        }
+    }
+
+    phCombFilter->process(ppfInputTestSignal, ppfOutputTestSignal, iTestLength);
+
+
+    if (eFilterType == CCombFilterIf::kCombFIR)
+    {
+        for (int i = 0; i < iNumChannels; i++)
+        {
+            for (int j = 100; j < iTestLength; j++)
+            {
+                if (abs(ppfOutputTestSignal[i][j]) > 1e-4) bTestPassedFlag = false; // Should be zero
+            }
+        }
+
+    }
+    else if (eFilterType == CCombFilterIf::kCombIIR)
+    {
+        for (int i = 0; i < iNumChannels; i++)
+        {
+            for (int j = 100; j < iTestLength; j++)
+            {
+                if (abs(ppfOutputTestSignal[i][j]) < 0.9) bTestPassedFlag = false; // Should be a large number
+            }
+        }
+
+    }
+
+    CCombFilterIf::destroy(phCombFilter);
+    for (int i = 0; i < iNumChannels; i++)
+        delete[] ppfInputTestSignal[i];
+    delete[] ppfInputTestSignal;
+    for (int i = 0; i < iNumChannels; i++)
+        delete[] ppfOutputTestSignal[i];
+    delete[] ppfOutputTestSignal;
+    if (bTestPassedFlag)
+    {
+        cout << "passed!" << endl;
+    }
+    else
+    {
+        cout << "not passed." << endl;
+    }
+}
