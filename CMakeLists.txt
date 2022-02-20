@@ -21,6 +21,9 @@ include(AddSrcDirectories)
 include(AddIncDirectories)
 
 
+# with tests or not
+option (WITH_TESTS "Use googletest for testing" ON)
+
 #######################################################################################################
 ## project specific stuff
 
@@ -28,12 +31,18 @@ include(AddIncDirectories)
 set (PROJECT_DIRECTORIES)
 list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}Exec)       
 list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/AudioFileIO) 
+list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/Vibrato) 
     
 # set includes
 set (PROJECT_INCLUDES)
 list (APPEND PROJECT_INCLUDES ${CMAKE_SOURCE_DIR}/inc)       
 list (APPEND PROJECT_INCLUDES ${CMAKE_SOURCE_DIR}/src/inc)       
 list (APPEND PROJECT_INCLUDES ${CMAKE_BINARY_DIR}/inc)       
+
+if (WITH_TESTS)
+	list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/3rdparty/googletest)
+	list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/Tests/TestExec)
+endif (WITH_TESTS)
 
 # add directories
 add_src_directories ()
@@ -45,4 +54,12 @@ message(STATUS "")
 
 # generate platform config file
 configure_file(${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}Config.h.in ${CMAKE_BINARY_DIR}/inc/${PROJECT_NAME}Config.h)
+
+#######################################################################################################
+# ## tests
+if (WITH_TESTS)
+    # add tests here
+    add_test(AudioIo ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestExec --gtest_filter=AudioIo* "${CMAKE_SOURCE_DIR}/src/Tests/TestData/")
+    add_test(Vibrato ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestExec --gtest_filter=Vibrato*)
+endif (WITH_TESTS)
 
