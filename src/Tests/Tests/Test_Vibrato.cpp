@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 
-namespace {
+namespace vibrato_test {
     void CHECK_ARRAY_CLOSE(float* buffer1, float* buffer2, int iLength, float fTolerance)
     {
         for (int i = 0; i < iLength; i++)

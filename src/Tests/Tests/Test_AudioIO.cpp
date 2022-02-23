@@ -9,7 +9,7 @@
 
 extern std::string cTestDataDir;
 
-namespace {
+namespace audiofile_test {
     void CHECK_ARRAY_CLOSE(float* buffer1, float* buffer2, int iLength, float fTolerance)
     {
         for (int i = 0; i < iLength; i++)
