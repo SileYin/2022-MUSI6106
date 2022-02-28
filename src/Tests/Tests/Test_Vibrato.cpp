@@ -52,20 +52,23 @@ namespace vibrato_test {
         CVibrato* pCVibrato;
     };
 
-
+    TEST_F(RingBuffer, BufferLength)
+    {
+        EXPECT_EQ(pCRingBuff->getLength(), 17);
+    }
 
     TEST_F(RingBuffer, IntegerDelay)
     {
         for (int i = 0; i < 5; i++)
         {
-            pCRingBuff->putPostInc(i);
+            pCRingBuff->putPostInc(1.F * i);
         }
 
         for (int i = 5; i < 30; i++)
         {
-            EXPECT_TRUE(pCRingBuff->getNumValuesInBuffer() == 5);
-            EXPECT_TRUE(abs(pCRingBuff->getPostInc() - (i - 5)) < 1e-3);
-            pCRingBuff->putPostInc(i);
+            EXPECT_EQ(pCRingBuff->getNumValuesInBuffer(), 5);
+            EXPECT_NEAR(pCRingBuff->getPostInc(), i - 5, 1e-3);
+            pCRingBuff->putPostInc(1.F * i);
         }
     }
 
@@ -73,15 +76,78 @@ namespace vibrato_test {
     {
         for (int i = 0; i < 5; i++)
         {
-            pCRingBuff->putPostInc(i);
+            pCRingBuff->putPostInc(1.F * i);
         }
 
         for (int i = 5; i < 30; i++)
         {
-            EXPECT_TRUE(pCRingBuff->getNumValuesInBuffer() == 5);
-            EXPECT_TRUE(abs(pCRingBuff->get(0.5) - (i - 4.5)) < 1e-3);
-            EXPECT_TRUE(abs(pCRingBuff->getPostInc() - (i - 5)) < 1e-3);
-            pCRingBuff->putPostInc(i);
+            EXPECT_EQ(pCRingBuff->getNumValuesInBuffer(), 5);
+            EXPECT_NEAR(pCRingBuff->get(0.5), i - 4.5, 1e-3);
+            EXPECT_NEAR(pCRingBuff->getPostInc(), i - 5, 1e-3);
+            pCRingBuff->putPostInc(1.F * i);
+        }
+    }
+
+    TEST_F(RingBuffer, Overflowing)
+    {
+        for (int i = 0; i < 25; i++)
+        {
+            pCRingBuff->putPostInc(1.F * i);
+        }
+
+        for (int i = 25; i < 30; i++)
+        {
+            EXPECT_EQ(pCRingBuff->getNumValuesInBuffer(), 25 - 17);
+            EXPECT_NEAR(pCRingBuff->getPostInc(), i - (25 - 17), 1e-3);
+            pCRingBuff->putPostInc(1.F * i);
+        }
+    }
+
+    TEST_F(RingBuffer, ReadBeforeWrite)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            EXPECT_NEAR(pCRingBuff->getPostInc(), 0, 1e-3);
+        }
+    }
+
+    TEST_F(RingBuffer, StuckReadHead)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            pCRingBuff->putPostInc(1.F * i);
+        }
+
+        for (int i = 5; i < 30; i++)
+        {
+            pCRingBuff->setReadIdx(0);
+            EXPECT_EQ(pCRingBuff->getNumValuesInBuffer(), pCRingBuff->getWriteIdx());
+            EXPECT_NEAR(fmod(pCRingBuff->getPostInc(), 17), 0, 1e-3);
+            pCRingBuff->putPostInc(1.F * i);
+        }
+    }
+
+    TEST_F(RingBuffer, StuckWriteHead)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            pCRingBuff->setWriteIdx(0);
+            pCRingBuff->putPostInc(1.F * i);
+        }
+
+        for (int i = 5; i < 30; i++)
+        {
+            pCRingBuff->setWriteIdx(0);
+            EXPECT_EQ(pCRingBuff->getNumValuesInBuffer(), (17 - pCRingBuff->getReadIdx()) % 17);
+            if (pCRingBuff->getReadIdx() == 0)
+            {
+                EXPECT_NEAR(pCRingBuff->getPostInc(), i - 1, 1e-3);
+            }
+            else
+            {
+                EXPECT_NEAR(pCRingBuff->getPostInc(), 0, 1e-3);
+            }
+            pCRingBuff->putPostInc(1.F * i);
         }
     }
 
@@ -95,10 +161,7 @@ namespace vibrato_test {
             pfInputBuffer[i] = sin(i / 100);
         }
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        for (int i = 0; i < 2048 - 480; i++)
-        {
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i+480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 1e-3);
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
@@ -115,20 +178,13 @@ namespace vibrato_test {
             pfInputBuffer[i] = 1;
         }
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        for (int i = 240; i < 2048 - 480; i++)
-        {
-            float l_fError = abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]);
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + 480, 2048 - 480 - 240, 1e-3);
 
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        for (int i = 96; i < 2048 - 480; i++)
-        {
-            float l_fError = abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]);
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 96, pfOutputBuffer + 96 + 480, 2048 - 480 - 96, 1e-3);
+
 
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
@@ -148,10 +204,7 @@ namespace vibrato_test {
         {
             pCVibrato->process(pfInputBuffer + i, pfOutputBuffer + i, i);
         }
-        for (int i = 0; i < 2048 - 480; i++)
-        {
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 1e-3);
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
@@ -172,11 +225,7 @@ namespace vibrato_test {
         {
             pCVibrato->process(pfInputBuffer + i, pfOutputBuffer + i, i);
         }
-        for (int i = 240; i < 2048 - 480; i++)
-        {
-            float l_fError = abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]);
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + 480, 2048 - 480 - 240, 1e-3);
 
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
@@ -185,11 +234,7 @@ namespace vibrato_test {
         {
             pCVibrato->process(pfInputBuffer + i, pfOutputBuffer + i, i);
         }
-        for (int i = 96; i < 2048 - 480; i++)
-        {
-            float l_fError = abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]);
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 96, pfOutputBuffer + 96 + 480, 2048 - 480 - 96, 1e-3);
 
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
@@ -207,20 +252,12 @@ namespace vibrato_test {
             pfInputBuffer[i] = 0;
         }
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        for (int i = 0; i < 2048 - 480; i++)
-        {
-            float l_fError = abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]);
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + 480, 2048 - 480 - 240, 1e-3);
 
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        for (int i = 0; i < 2048 - 480; i++)
-        {
-            float l_fError = abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]);
-            EXPECT_TRUE(abs(pfInputBuffer[i] - pfOutputBuffer[i + 480]) < 1e-3);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 96, pfOutputBuffer + 96 + 480, 2048 - 480 - 96, 1e-3);
 
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
