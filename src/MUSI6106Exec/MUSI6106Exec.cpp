@@ -5,6 +5,7 @@
 #include "MUSI6106Config.h"
 
 #include "AudioFileIf.h"
+#include "Fft.h"
 
 using std::cout;
 using std::endl;
@@ -24,16 +25,22 @@ int main(int argc, char* argv[])
     clock_t                 time = 0;
 
     float** ppfAudioData = 0;
+    float** ppfFftMag = 0;
 
     CAudioFileIf* phAudioFile = 0;
     std::fstream            hOutputFile;
     CAudioFileIf::FileSpec_t stFileSpec;
 
+    int iFftBlockLength, iFftHopLength;
+    CFft::complex_t** pcSpectrogram = 0;
+
+    CFft* phFftCalculator = 0;
+
     showClInfo();
 
     //////////////////////////////////////////////////////////////////////////////
     // parse command line arguments
-    if (argc < 2)
+    if (argc < 4)
     {
         cout << "Missing audio input path!";
         return -1;
@@ -42,11 +49,15 @@ int main(int argc, char* argv[])
     {
         sInputFilePath = argv[1];
         sOutputFilePath = sInputFilePath + ".txt";
+        iFftBlockLength = std::stoi(argv[2]);
+        iFftHopLength = std::stoi(argv[3]);
     }
 
     //////////////////////////////////////////////////////////////////////////////
     // open the input wave file
     CAudioFileIf::create(phAudioFile);
+    CFft::createInstance(phFftCalculator);
+    phFftCalculator->initInstance(iFftBlockLength);
     phAudioFile->openFile(sInputFilePath, CAudioFileIf::kFileRead);
     if (!phAudioFile->isOpen())
     {
@@ -70,7 +81,11 @@ int main(int argc, char* argv[])
     // allocate memory
     ppfAudioData = new float* [stFileSpec.iNumChannels];
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
-        ppfAudioData[i] = new float[kBlockSize];
+        ppfAudioData[i] = new float[iFftBlockLength];
+
+    ppfFftMag = new float* [stFileSpec.iNumChannels];
+    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+        ppfFftMag[i] = new float[static_cast<int>(iFftBlockLength / 2) + 1];
 
     if (ppfAudioData == 0)
     {
@@ -85,6 +100,10 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    pcSpectrogram = new CFft::complex_t* [stFileSpec.iNumChannels];
+    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+        pcSpectrogram[i] = new CFft::complex_t [iFftBlockLength];
+
     time = clock();
 
     //////////////////////////////////////////////////////////////////////////////
@@ -92,22 +111,41 @@ int main(int argc, char* argv[])
     while (!phAudioFile->isEof())
     {
         // set block length variable
-        long long iNumFrames = kBlockSize;
+        long long iNumFrames = iFftBlockLength;
+        long long iCurPosition;
+
+        phAudioFile->getPosition(iCurPosition);
 
         // read data (iNumOfFrames might be updated!)
         phAudioFile->readData(ppfAudioData, iNumFrames);
 
+        phAudioFile->setPosition(iCurPosition + static_cast<long long>(iFftHopLength));
         cout << "\r" << "reading and writing";
 
-        // write
-        for (int i = 0; i < iNumFrames; i++)
+        for (int i = iNumFrames; i < iFftBlockLength; i++)
         {
             for (int c = 0; c < stFileSpec.iNumChannels; c++)
             {
-                hOutputFile << ppfAudioData[c][i] << "\t";
+                ppfAudioData[c][i] = 0;
             }
-            hOutputFile << endl;
         }
+
+        for (int c = 0; c < stFileSpec.iNumChannels; c++)
+        {
+            phFftCalculator->doFft(pcSpectrogram[c], ppfAudioData[c]);
+            phFftCalculator->getMagnitude(ppfFftMag[c], pcSpectrogram[c]);
+        }
+
+
+        // write
+        for (int i = 0; i <= static_cast<int>(iFftBlockLength / 2); i++)
+        {
+            for (int c = 0; c < stFileSpec.iNumChannels; c++)
+            {
+                hOutputFile << ppfFftMag[c][i] << " ";
+            }
+        }
+        hOutputFile << endl;
     }
 
     cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
@@ -115,7 +153,17 @@ int main(int argc, char* argv[])
     //////////////////////////////////////////////////////////////////////////////
     // clean-up (close files and free memory)
     CAudioFileIf::destroy(phAudioFile);
+    CFft::destroyInstance(phFftCalculator);
     hOutputFile.close();
+
+    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+        delete[] pcSpectrogram[i];
+    delete[] pcSpectrogram;
+    pcSpectrogram = 0;
+    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+        delete[] ppfFftMag[i];
+    delete[] ppfFftMag;
+    ppfFftMag = 0;
 
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
         delete[] ppfAudioData[i];
