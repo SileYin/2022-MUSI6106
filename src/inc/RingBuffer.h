@@ -115,6 +115,14 @@ public:
     void setWriteIdx(int iNewWriteIdx)
     {
         m_iWriteIdx = iNewWriteIdx;
+        while (m_iWriteIdx > m_iBuffLength)
+        {
+            m_iWriteIdx -= m_iBuffLength;
+        }
+        while (m_iWriteIdx < 0)
+        {
+            m_iWriteIdx += m_iBuffLength;
+        }
     }
 
     /*! return the current index for reading/get
@@ -132,6 +140,14 @@ public:
     void setReadIdx(int iNewReadIdx)
     {
         m_iReadIdx = iNewReadIdx;
+        while (m_iReadIdx > m_iBuffLength)
+        {
+            m_iReadIdx -= m_iBuffLength;
+        }
+        while (m_iReadIdx < 0)
+        {
+            m_iReadIdx += m_iBuffLength;
+        }
     }
 
     /*! returns the number of values currently buffered (note: 0 could also mean the buffer is full!)
@@ -157,6 +173,7 @@ public:
         return m_iBuffLength;
     }
 private:
+
     CRingBuffer();
     CRingBuffer(const CRingBuffer& that);
     T* m_ptBuff;

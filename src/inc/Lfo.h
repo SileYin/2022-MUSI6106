@@ -12,13 +12,21 @@ public:
 		m_fReadIdx(0.f)
 	{
 		double const l_dPi = 3.14159265358979323846;
+		assert(iWavetableLength > 0);
 		pCWavetableRingBuff = new CRingBuffer<float>(iWavetableLength);
 		for (int i = 0; i < iWavetableLength; i++)
 		{
 			pCWavetableRingBuff->putPostInc(sin(2 * l_dPi * i / iWavetableLength));
 		}
-		m_fAmplitude = fAmplitude;
-		m_fReadInc = static_cast<float>(iSampleRate) / static_cast<float>(iWavetableLength) / fFrequency;
+		m_fAmplitude = fAmplitude; 
+		if (fFrequency < 1e-3)
+		{
+			m_fReadInc = 0;
+		}
+		else
+		{
+			m_fReadInc = static_cast<float>(m_iSampleRate) / static_cast<float>(pCWavetableRingBuff->getLength()) / fFrequency;
+		}
 	}
 	~CWavetableLFO()
 	{
@@ -35,7 +43,14 @@ public:
 	}
 	void setLFOFrequency(float fFrequency, float fPhaseInDegrees = (0.f))
 	{
-		m_fReadInc = static_cast<float>(m_iSampleRate) / static_cast<float>(pCWavetableRingBuff->getLength()) / fFrequency;
+		if (fFrequency < 1e-3) 
+		{
+			m_fReadInc = 0;
+		}
+		else
+		{
+			m_fReadInc = static_cast<float>(m_iSampleRate) / static_cast<float>(pCWavetableRingBuff->getLength()) / fFrequency;
+		}
 		setReadPhase(fPhaseInDegrees);
 	}
 	int getLFOFrequency() const
