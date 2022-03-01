@@ -1,18 +1,18 @@
 #include "Vibrato.h"
 
 CVibrato::CVibrato():
-	m_bIsInitialized(false),
-	m_fSampleRate(0),
-	m_fDelayTimeInS(0),
-	m_fVibratoRangeInS(0),
-	m_fVibratoFrequencyInHz(0)
+    m_bIsInitialized(false),
+    m_fSampleRate(0),
+    m_fDelayTimeInS(0),
+    m_fVibratoRangeInS(0),
+    m_fVibratoFrequencyInHz(0)
 {
-	this->reset();
+    this->reset();
 }
 
 CVibrato::~CVibrato()
 {
-	this->reset();
+    this->reset();
 }
 
 Error_t CVibrato::create(CVibrato*& pCVibrato)

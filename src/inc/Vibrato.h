@@ -10,33 +10,33 @@ class CVibrato
 {
 public:
 
-	/*! list of parameters for the vibrato */
-	enum VibratoParam_t
-	{
-		kParamVibratoRange,         //!< time range of vibrato, in seconds
-		kParamVibratoFrequency,        //!< frequency of vibrato in Hz
+    /*! list of parameters for the vibrato */
+    enum VibratoParam_t
+    {
+        kParamVibratoRange,         //!< time range of vibrato, in seconds
+        kParamVibratoFrequency,        //!< frequency of vibrato in Hz
 
-		kNumVibratoParams
-	};
+        kNumVibratoParams
+    };
 
-	/*! creates a new vibrato instance
-	\param pCCombFilterIf pointer to the new class
-	\return Error_t
-	*/
-	static Error_t create(CVibrato*& CVibrato);
+    /*! creates a new vibrato instance
+    \param pCCombFilterIf pointer to the new class
+    \return Error_t
+    */
+    static Error_t create(CVibrato*& CVibrato);
 
-	/*! destroys a vibrato instance
-	\param pCCombFilterIf pointer to the class to be destroyed
-	\return Error_t
-	*/
-	static Error_t destroy(CVibrato*& CVibrato);
+    /*! destroys a vibrato instance
+    \param pCCombFilterIf pointer to the class to be destroyed
+    \return Error_t
+    */
+    static Error_t destroy(CVibrato*& CVibrato);
 
-	/*! initializes a vibrato instance
-	\param fDelayTimeInS delay of the vibrato, in seconds
-	\param fSampleRateInHz sample rate in Hz
-	\param iLFOWavetableLength desired LFO wavetable length
-	\return Error_t
-	*/
+    /*! initializes a vibrato instance
+    \param fDelayTimeInS delay of the vibrato, in seconds
+    \param fSampleRateInHz sample rate in Hz
+    \param iLFOWavetableLength desired LFO wavetable length
+    \return Error_t
+    */
     Error_t init(float fDelayTimeInS, float fSampleRateInHz, int iLFOWavetableLength = 4096);
 
     /*! resets the internal variables (requires new call of init)
@@ -65,16 +65,16 @@ public:
     */
     Error_t process(float* pfInputBuffer, float* pfOutputBuffer, int iNumberOfFrames);
 protected:
-	CVibrato();
-	~CVibrato();
+    CVibrato();
+    ~CVibrato();
 private:
-	CWavetableLFO* m_pCLFO = 0;
-	CRingBuffer<float>* m_pCRingBuff = 0;
-	bool m_bIsInitialized;
-	float m_fSampleRate;
-	float m_fDelayTimeInS;
-	float m_fVibratoRangeInS;
-	float m_fVibratoFrequencyInHz;
+    CWavetableLFO* m_pCLFO = 0;
+    CRingBuffer<float>* m_pCRingBuff = 0;
+    bool m_bIsInitialized;
+    float m_fSampleRate;
+    float m_fDelayTimeInS;
+    float m_fVibratoRangeInS;
+    float m_fVibratoFrequencyInHz;
 };
 
 #endif // __Vibrato_hdr__
