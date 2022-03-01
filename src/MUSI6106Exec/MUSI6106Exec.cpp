@@ -36,6 +36,8 @@ int main(int argc, char* argv[])
 
     CFft* phFftCalculator = 0;
 
+    long long iCurPosition;
+
     showClInfo();
 
     //////////////////////////////////////////////////////////////////////////////
@@ -112,15 +114,16 @@ int main(int argc, char* argv[])
     {
         // set block length variable
         long long iNumFrames = iFftBlockLength;
-        long long iCurPosition;
 
         phAudioFile->getPosition(iCurPosition);
 
         // read data (iNumOfFrames might be updated!)
         phAudioFile->readData(ppfAudioData, iNumFrames);
 
-        phAudioFile->setPosition(iCurPosition + static_cast<long long>(iFftHopLength));
-        cout << "\r" << "reading and writing";
+        long long iNextHead = iCurPosition + iFftHopLength;
+
+        phAudioFile->setPosition(iNextHead);
+        // cout << "\r" << "reading and writing";
 
         for (int i = iNumFrames; i < iFftBlockLength; i++)
         {
