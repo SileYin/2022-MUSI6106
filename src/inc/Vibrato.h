@@ -58,8 +58,8 @@ public:
     float   getParam(VibratoParam_t eParam) const;
 
     /*! processes one block of audio
-    \param ppfInputBuffer input buffer [numChannels][iNumberOfFrames]
-    \param ppfOutputBuffer output buffer [numChannels][iNumberOfFrames]
+    \param pfInputBuffer input buffer [iNumberOfFrames]
+    \param pfOutputBuffer output buffer [iNumberOfFrames]
     \param iNumberOfFrames buffer length (per channel)
     \return Error_t
     */
