@@ -118,6 +118,7 @@ Error_t CVibrato::process(float* pfInputBuffer, float* pfOutputBuffer, int iNumb
 
     for (int i = 0; i < iNumberOfFrames; i++)
     {
+        float shift = m_pCLFO->getPostInc();
         m_pCRingBuff->putPostInc(pfInputBuffer[i]);
         pfOutputBuffer[i] = m_pCRingBuff->get(m_pCLFO->getPostInc());
         m_pCRingBuff->getPostInc();

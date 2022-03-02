@@ -12,6 +12,7 @@ namespace vibrato_test {
     {
         for (int i = 0; i < iLength; i++)
         {
+            float error = abs(buffer1[i] - buffer2[i]);
             EXPECT_NEAR(buffer1[i], buffer2[i], fTolerance);
         }
     }
@@ -82,7 +83,8 @@ namespace vibrato_test {
         for (int i = 5; i < 30; i++)
         {
             EXPECT_EQ(pCRingBuff->getNumValuesInBuffer(), 5);
-            EXPECT_NEAR(pCRingBuff->get(0.5), i - 4.5, 1e-3);
+            if(i > 5)
+                EXPECT_NEAR(pCRingBuff->get(-0.5), i - 5.5, 1e-3);
             EXPECT_NEAR(pCRingBuff->getPostInc(), i - 5, 1e-3);
             pCRingBuff->putPostInc(1.F * i);
         }
@@ -254,6 +256,8 @@ namespace vibrato_test {
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
         CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + 480, 2048 - 480 - 240, 1e-3);
 
+        pCVibrato->reset();
+        pCVibrato->init(0.01, 48000);
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);

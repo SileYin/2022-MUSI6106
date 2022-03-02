@@ -83,6 +83,10 @@ public:
     {
         int l_iIdx = (m_iReadIdx + static_cast<int>(floor(fOffset))) % m_iBuffLength;
         float l_fOffset = fOffset - floor(fOffset);
+        while (l_iIdx < 0) 
+        {
+            l_iIdx += m_iBuffLength;
+        }
         assert(l_fOffset >= 0 && l_fOffset < 1);
         return static_cast<T>(m_ptBuff[l_iIdx] + l_fOffset * (m_ptBuff[(l_iIdx + 1) % m_iBuffLength] - m_ptBuff[l_iIdx]));
     }
@@ -115,7 +119,7 @@ public:
     void setWriteIdx(int iNewWriteIdx)
     {
         m_iWriteIdx = iNewWriteIdx;
-        while (m_iWriteIdx > m_iBuffLength)
+        while (m_iWriteIdx >= m_iBuffLength)
         {
             m_iWriteIdx -= m_iBuffLength;
         }
@@ -140,7 +144,7 @@ public:
     void setReadIdx(int iNewReadIdx)
     {
         m_iReadIdx = iNewReadIdx;
-        while (m_iReadIdx > m_iBuffLength)
+        while (m_iReadIdx >= m_iBuffLength)
         {
             m_iReadIdx -= m_iBuffLength;
         }
