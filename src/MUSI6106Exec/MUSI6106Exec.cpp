@@ -5,30 +5,38 @@
 #include "MUSI6106Config.h"
 
 #include "AudioFileIf.h"
-#include "CombFilterIf.h"
+#include "RingBuffer.h"
+#include "Fft.h"
+#include "Vector.h"
 
 using std::cout;
 using std::endl;
 
 // local function declarations
-void    showClInfo ();
+void    showClInfo();
 
 /////////////////////////////////////////////////////////////////////////////////
 // main function
 int main(int argc, char* argv[])
 {
     std::string sInputFilePath,                 //!< file paths
-                sOutputFilePath;
+        sOutputFilePath;
 
-    static const int kBlockSize = 1024;
+    int iBlockLength = 4096,
+        iHopLength = 2048;
 
     clock_t time = 0;
 
-    float **ppfAudioData = 0;
+    float** ppfAudioData = 0;
 
-    CAudioFileIf *phAudioFile = 0;
+    float* pfSpectrum = 0;
+
+    CAudioFileIf* phAudioFile = 0;
     std::fstream hOutputFile;
     CAudioFileIf::FileSpec_t stFileSpec;
+
+    CRingBuffer<float> *pCRingBuffer = 0;
+    CFft* pCFft = 0;
 
     showClInfo();
 
@@ -41,9 +49,31 @@ int main(int argc, char* argv[])
     }
     else
     {
-        sInputFilePath = argv[1];
-        sOutputFilePath = sInputFilePath + ".txt";
+        if (argc > 3)
+        {
+            iHopLength = std::stoi(argv[3]);
+        }
+        if (argc > 2)
+        {
+            iBlockLength = std::stoi(argv[2]);
+        }
+        if (argc > 1)
+        {
+            sInputFilePath = argv[1];
+            sOutputFilePath = sInputFilePath + ".txt";
+        }
     }
+
+    //////////////////////////////////////////////////////////////////////////////
+    // initialize read buffer
+    pCRingBuffer = new CRingBuffer<float>(iBlockLength);
+    pCRingBuffer->setWriteIdx(iBlockLength - iHopLength);
+
+    //////////////////////////////////////////////////////////////////////////////
+    // initialize FFT and fft output buffer
+    CFft::createInstance(pCFft);
+    pCFft->initInstance(iBlockLength);
+    pfSpectrum = new float[iBlockLength];
 
     //////////////////////////////////////////////////////////////////////////////
     // open the input wave file
@@ -69,9 +99,9 @@ int main(int argc, char* argv[])
 
     //////////////////////////////////////////////////////////////////////////////
     // allocate memory
-    ppfAudioData = new float*[stFileSpec.iNumChannels];
+    ppfAudioData = new float* [stFileSpec.iNumChannels];
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
-        ppfAudioData[i] = new float[kBlockSize];
+        ppfAudioData[i] = new float[iBlockLength];
 
     if (ppfAudioData == 0)
     {
@@ -93,31 +123,59 @@ int main(int argc, char* argv[])
     while (!phAudioFile->isEof())
     {
         // set block length variable
-        long long iNumFrames = kBlockSize;
+        long long iNumFrames = iHopLength;
 
         // read data (iNumOfFrames might be updated!)
         phAudioFile->readData(ppfAudioData, iNumFrames);
 
-        cout << "\r" << "reading and writing";
-
-        // write
-        for (int i = 0; i < iNumFrames; i++)
+        // set buffer to zero if not written (EOF)
+        if (iNumFrames < iHopLength)
         {
             for (int c = 0; c < stFileSpec.iNumChannels; c++)
-            {
-                hOutputFile << ppfAudioData[c][i] << "\t";
-            }
-            hOutputFile << endl;
+                CVectorFloat::setZero(&ppfAudioData[c][iNumFrames], iHopLength - iNumFrames);
         }
+
+        // downmix in case of multichannel
+        for (int c = 1; c < stFileSpec.iNumChannels; c++)
+            CVectorFloat::add_I(ppfAudioData[0], ppfAudioData[c], iNumFrames);
+        CVectorFloat::mulC_I(ppfAudioData[0], 1.F / stFileSpec.iNumChannels, iNumFrames);
+
+        // write data into ringbuffer
+        pCRingBuffer->putPostInc(ppfAudioData[0], iHopLength);
+
+        cout << "\r" << "computing FFT and writing file";
+
+        // get data from ringbuffer and increment read index
+        pCRingBuffer->get(ppfAudioData[0], iBlockLength);
+        pCRingBuffer->setReadIdx(pCRingBuffer->getReadIdx() + iHopLength);
+
+        // compute magnitude spectrum (hack
+        pCFft->doFft(pfSpectrum, ppfAudioData[0]);
+        pCFft->getMagnitude(ppfAudioData[0], pfSpectrum);
+
+        // write
+        // note that this solution is, compared to the matlab reference, shifted by one block and scaled by 0.5
+        for (int i = 0; i < (iBlockLength>>1) + 1; i++)
+        {
+            hOutputFile << ppfAudioData[0][i] << "\t";
+        }
+        hOutputFile << endl;
     }
 
     cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
 
     //////////////////////////////////////////////////////////////////////////////
-    // clean-up (close files and free memory)
+    // clean-up (close files, delete instances, and free memory)
     CAudioFileIf::destroy(phAudioFile);
     hOutputFile.close();
 
+    CFft::destroyInstance(pCFft);
+    pCFft = 0;
+    delete pCRingBuffer;
+    pCRingBuffer = 0;
+
+    delete[] pfSpectrum;
+    pfSpectrum = 0;
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
         delete[] ppfAudioData[i];
     delete[] ppfAudioData;
@@ -133,7 +191,7 @@ void     showClInfo()
 {
     cout << "MUSI6106 Assignment Executable" << endl;
     cout << "(c) 2014-2022 by Alexander Lerch" << endl;
-    cout  << endl;
+    cout << endl;
 
     return;
 }

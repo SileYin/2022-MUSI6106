@@ -52,7 +52,7 @@ public:
     {
         int iOrder = 0;
 
-        if (n == 0)
+        if (n <= 0)
             return 0;
 
         while (n>>iOrder)

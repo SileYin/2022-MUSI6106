@@ -17,7 +17,7 @@ public:
     \return void
     */
     template<typename T>
-    static void setZero (T *pfSrcDest, int iLength)
+    static void setZero (T *pfSrcDest, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
@@ -32,12 +32,12 @@ public:
     \return void
     */
     template<typename T>
-    static void setZeroBelowThresh (T *pfSrcDest, int iLength, T Thresh)
+    static void setZeroBelowThresh (T *pfSrcDest, long long int iLength, T Thresh)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             if (pfSrcDest[i] < Thresh)
                 pfSrcDest[i] = 0;
     }
@@ -48,7 +48,7 @@ public:
     \return void
     */
     template<typename T>
-    static void copy(T *pDest, const T *pSource, int iLength)
+    static void copy(T *pDest, const T *pSource, long long int iLength)
     {
         assert(iLength >= 0);
 
@@ -65,7 +65,7 @@ public:
     \return void
     */
     template<typename T>
-    static void flip_I(T *pfSrcDest, int iLength)
+    static void flip_I(T *pfSrcDest, long long int iLength)
     {
         assert(iLength >= 0);
 
@@ -73,12 +73,12 @@ public:
         {
             assert(pfSrcDest);
 
-            int iLoopLength = iLength / 2; // integer division!
-            for (int i = 0; i < iLoopLength; i++)
+            auto iLoopLength = iLength / 2; // integer division!
+            for (auto i = 0; i < iLoopLength; i++)
             {
-                T Tmp                       = pfSrcDest[i];
-                pfSrcDest[i]                 = pfSrcDest[iLength - 1 - i];
-                pfSrcDest[iLength - 1 - i]   = Tmp;
+                T Tmp = pfSrcDest[i];
+                pfSrcDest[i] = pfSrcDest[iLength - 1 - i];
+                pfSrcDest[iLength - 1 - i] = Tmp;
             }
         }
     }
@@ -90,7 +90,7 @@ public:
     \return void
     */
     template<typename T>
-    static void moveInMem (T *pfSrcDest, int iDestIdx, int iSrcIdx, int iLength)
+    static void moveInMem (T *pfSrcDest, int iDestIdx, int iSrcIdx, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
@@ -111,7 +111,7 @@ public:
     \param iLength  buffer length
     \return void
     */
-    static inline void setZero (float *pfSrcDest, int iLength)
+    static inline void setZero (float *pfSrcDest, long long int iLength)
     {
         CVector::setZero(pfSrcDest, iLength);
     }
@@ -122,7 +122,7 @@ public:
     \param fThresh threshold value
     \return void
     */
-    static inline void setZeroBelowThresh (float *pfSrcDest, int iLength, float fThresh)
+    static inline void setZeroBelowThresh (float *pfSrcDest, long long int iLength, float fThresh)
     {
         CVector::setZeroBelowThresh(pfSrcDest, iLength, fThresh);
     }
@@ -133,7 +133,7 @@ public:
     \param iLength length of buffer
     \return void
     */
-    static inline void copy(float *pfDest, const float *pfSource, int iLength)
+    static inline void copy(float *pfDest, const float *pfSource, long long int iLength)
     {
         CVector::copy(pfDest, pfSource, iLength);
     }
@@ -143,7 +143,7 @@ public:
     \param iLength number of elements
     \return void
     */
-    static inline void flip_I(float *pfSrcDest, int iLength)
+    static inline void flip_I(float *pfSrcDest, long long int iLength)
     {
         CVector::flip_I(pfSrcDest, iLength);
     }
@@ -155,7 +155,7 @@ public:
     \param iLength number of elements to be moved
     \return void
     */
-    static inline void moveInMem (float *pfSrcDest, int iDestIdx, int iSrcIdx, int iLength)
+    static inline void moveInMem (float *pfSrcDest, int iDestIdx, int iSrcIdx, long long int iLength)
     {
         CVector::moveInMem(pfSrcDest, iDestIdx, iSrcIdx, iLength);
     }
@@ -166,12 +166,12 @@ public:
     \param iLength number of elements to be set
     \return void
     */
-    static inline void setValue (float *pfDest, float fValue, int iLength)
+    static inline void setValue (float *pfDest, float fValue, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfDest);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             pfDest[i] = fValue;
     }
 
@@ -181,12 +181,12 @@ public:
     \param iLength number of element to be multiplied
     \return void
     */
-    static inline void mulC_I (float *pfSrcDest, float fScale, int iLength)
+    static inline void mulC_I (float *pfSrcDest, float fScale, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
         
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             pfSrcDest[i] *= fScale;
     }
 
@@ -196,13 +196,13 @@ public:
     \param iLength number of element to be multiplied
     \return void
     */
-    static inline void mul_I (float *pfSrcDest, const float *pfSrc, int iLength)
+    static inline void mul_I (float *pfSrcDest, const float *pfSrc, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
         assert (pfSrc);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             pfSrcDest[i] *= pfSrc[i];
     }
 
@@ -212,14 +212,14 @@ public:
     \param iLength number of dimenions
     \return float
     */
-    static inline float mulScalar (const float *pfSrc1, const float *pfSrc2, int iLength)
+    static inline float mulScalar (const float *pfSrc1, const float *pfSrc2, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrc1);
         assert (pfSrc2);
         float  fResult = 0;
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             fResult += pfSrc1[i] * pfSrc2[i];
 
         return fResult;
@@ -231,13 +231,13 @@ public:
     \param iLength number of element to be divided
     \return void
     */
-    static inline void div_I (float *pfSrcDest, const float *pfSrc, int iLength)
+    static inline void div_I (float *pfSrcDest, const float *pfSrc, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
         assert (pfSrc);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
         {
             assert(pfSrc[i] != 0);
             pfSrcDest[i] /= pfSrc[i];
@@ -250,13 +250,13 @@ public:
     \param iLength number of element to be added
     \return void
     */
-    static inline void add_I (float *pfSrcDest, const float *pfSrc, int iLength)
+    static inline void add_I (float *pfSrcDest, const float *pfSrc, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
         assert (pfSrc);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             pfSrcDest[i] += pfSrc[i];
     }
 
@@ -266,12 +266,12 @@ public:
     \param iLength number of element to be added
     \return void
     */
-    static inline void addC_I (float *pfSrcDest, float fScale, int iLength)
+    static inline void addC_I (float *pfSrcDest, float fScale, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             pfSrcDest[i] += fScale;
     }
 
@@ -281,13 +281,13 @@ public:
     \param iLength number of element to be subtracted
     \return void
     */
-    static inline void sub_I (float *pfSrcDest, const float *pfSrc, int iLength)
+    static inline void sub_I (float *pfSrcDest, const float *pfSrc, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrcDest);
         assert (pfSrc);
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
             pfSrcDest[i] -= pfSrc[i];
     }
 
@@ -297,7 +297,7 @@ public:
     \param bAbs specifies whether it is the sum of absolute values or not
     \return float
     */
-    static inline float sum (const float *pfSrc, int iLength, bool bAbs = false)
+    static inline float getSum (const float *pfSrc, long long int iLength, bool bAbs = false)
     {
         assert (iLength >= 0);
         assert (pfSrc);
@@ -305,12 +305,12 @@ public:
         float fResult = 0;
         if (bAbs)
         {
-            for (int i = 0; i < iLength; i++)
+            for (auto i = 0; i < iLength; i++)
                 fResult += std::abs(pfSrc[i]);
         }
         else
         {
-            for (int i = 0; i < iLength; i++)
+            for (auto i = 0; i < iLength; i++)
                 fResult += pfSrc[i];
         }
         return fResult;
@@ -322,7 +322,7 @@ public:
     \param iLength number of dimensions
     \return bool
     */
-    static inline bool isEqual (const float *pfSrc1, const float *pfSrc2, int iLength)
+    static inline bool isEqual (const float *pfSrc1, const float *pfSrc2, long long int iLength)
     {
         assert (iLength >= 0);
         assert (pfSrc1);
@@ -340,12 +340,7 @@ public:
     {
         assert (iLength >= 0);
 
-        float fMean = 0;
-
-        for (int i=0; i < iLength; i++)
-        {
-            fMean  += pfSrc[i];
-        }
+        float fMean = getSum(pfSrc, iLength);
 
         if (iLength > 0)
         {
@@ -372,7 +367,7 @@ public:
             fMean   = getMean(pfSrc, iLength);
         }
 
-        for (int i=0; i < iLength; i++)
+        for (auto i=0; i < iLength; i++)
         {
             fStd   += (pfSrc[i] - fMean) * (pfSrc[i] - fMean);
         }
@@ -398,7 +393,7 @@ public:
         float fRms = 0;
 
 
-        for (int i=0; i < iLength; i++)
+        for (auto i=0; i < iLength; i++)
         {
             fRms   += pfSrc[i] * pfSrc[i];
         }
@@ -459,7 +454,7 @@ public:
         fMax    = -std::numeric_limits<float>::max();
         iMax    = -1;
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
         {
             float fCurr   = (bAbs)? std::abs(pfSrc[i]) : pfSrc[i];
 
@@ -487,7 +482,7 @@ public:
         fMin    = std::numeric_limits<float>::max();
         iMin    = -1;
 
-        for (int i = 0; i < iLength; i++)
+        for (auto i = 0; i < iLength; i++)
         {
             float fCurr   = (bAbs)? std::abs(pfSrc[i]) : pfSrc[i];
 
