@@ -32,7 +32,9 @@ int main(int argc, char* argv[])
     CAudioFileIf *phAudioFileOut = 0;
     std::fstream hTestOutputFile;
     CAudioFileIf::FileSpec_t stFileSpec;
-    CVibrato *pCVibrato=0;
+    CVibrato *pCVibrato = 0;
+    float fVibratoRange = 0;
+    float fVibratoFrequency = 0;
 
     showClInfo();
     //////////////////////////////////////////////////////////////////////////////
@@ -44,7 +46,9 @@ int main(int argc, char* argv[])
     else
     {
         sInputFilePath = argv[1];
-        sOutputAudPath =  argv[2];
+        fVibratoRange = std::stof(argv[2]);
+        fVibratoFrequency = std::stof(argv[3]);
+        sOutputAudPath = sInputFilePath + "_vibrato_" + argv[2] + '_' + argv[3] + ".wav";
     }
     
     // open the input wave file
@@ -68,6 +72,7 @@ int main(int argc, char* argv[])
         return -1;
     }
     
+    assert(stFileSpec.iNumChannels == 1);
     // allocate memory
     ppfAudioData = new float*[stFileSpec.iNumChannels];
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
@@ -79,11 +84,9 @@ int main(int argc, char* argv[])
     
     
     CVibrato::create(pCVibrato);
-    pCVibrato->init(0.01, 44100);
-    pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
-    pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
-    
-
+    pCVibrato->init(fVibratoRange, stFileSpec.fSampleRateInHz);
+    pCVibrato->setParam(CVibrato::kParamVibratoFrequency, fVibratoFrequency);
+    pCVibrato->setParam(CVibrato::kParamVibratoRange, fVibratoRange);
 
     while (!phAudioFile->isEof())
     {
@@ -95,8 +98,7 @@ int main(int argc, char* argv[])
         cout << "\r" << "reading audio"<<endl;
         
         // vibrato
-        for (int i = 0; i < stFileSpec.iNumChannels; i++)
-            pCVibrato->process(ppfAudioData[i], ppfAudioDataOut[i], iNumFrames);
+        pCVibrato->process(ppfAudioData[0], ppfAudioDataOut[0], iNumFrames);
         
         cout << "\r" << "Write audio"<<endl;
         phAudioFileOut->writeData(ppfAudioDataOut, iNumFrames);
