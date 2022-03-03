@@ -68,13 +68,13 @@ protected:
     CVibrato();
     ~CVibrato();
 private:
-    CWavetableLFO* m_pCLFO = 0;
-    CRingBuffer<float>* m_pCRingBuff = 0;
-    bool m_bIsInitialized;
-    float m_fSampleRate;
-    float m_fDelayTimeInS;
-    float m_fVibratoRangeInS;
-    float m_fVibratoFrequencyInHz;
+    CWavetableLFO* m_pCLFO = 0; //<! Wavetable LFO for the vibrato
+    CRingBuffer<float>* m_pCRingBuff = 0; //<! Buffer for the vibrato
+    bool m_bIsInitialized; //<! true if initialized
+    float m_fSampleRate; //<! working sample rate for the vibrato
+    float m_fDelayTimeInS; //<! Delay time for the vibrato in seconds
+    float m_fVibratoRangeInS; //<! Mod range for the vibrato in seconds
+    float m_fVibratoFrequencyInHz; //<! Rate for the vibrato in Hz
 };
 
 #endif // __Vibrato_hdr__
