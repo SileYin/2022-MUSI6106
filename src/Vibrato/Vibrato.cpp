@@ -117,6 +117,7 @@ Error_t CVibrato::process(float* pfInputBuffer, float* pfOutputBuffer, int iNumb
         return Error_t::kNotInitializedError;
     }
 
+    // technically in this case it is number of samples (but called on a block-by-block basis)
     for (int i = 0; i < iNumberOfFrames; i++)
     {
         m_pCRingBuff->putPostInc(pfInputBuffer[i]);

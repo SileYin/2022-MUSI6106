@@ -287,6 +287,22 @@ namespace vibrato_test {
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
+    TEST_F(Vibrato, CreateAndDestroy)
+    {
+        CVibrato* pCVibrato_Test;
+        CVibrato::create(pCVibrato_Test);
+
+        // initialize and set values
+        pCVibrato_Test->init(0.01, 48000);
+        pCVibrato_Test->setParam(CVibrato::kParamVibratoFrequency, 20);
+        pCVibrato_Test->setParam(CVibrato::kParamVibratoRange, 1);
+        
+        CVibrato::destroy(pCVibrato_Test);
+
+        // check if vibrato is zero
+        EXPECT_EQ(pCVibrato_Test, nullptr);
+    }
+
 }
 
 #endif //WITH_TESTS
