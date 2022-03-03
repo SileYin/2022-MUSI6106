@@ -7,6 +7,11 @@
 
 /*! \brief A vibrato using wavetable LFO
 * 
+* This vibrato is single channel only, to keep the implementation simple, since
+* having a multichannel vibrato but keep every parameter in each channel the same 
+* don't have much value. If the user wants multichannel vibrato, they can just 
+* have one instance of this class for each channels.
+*  
 * This interface is designed (100% copied) from the previous CCombFilterIf and
 * AudioFileIf classes to keep the repository in style.
 * The create and destroy function and the protected constructor and destructor
