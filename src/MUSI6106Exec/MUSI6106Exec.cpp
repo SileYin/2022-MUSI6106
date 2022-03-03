@@ -39,9 +39,10 @@ int main(int argc, char* argv[])
     showClInfo();
     //////////////////////////////////////////////////////////////////////////////
     // parse command line arguments
-    if (argc < 2)
+    if (argc < 4)
     {
-        cout<<"Input not enough! Please specify input and output path"<<endl;
+        cout<<"Not enough input arguments! Usage: '<inputFilePath> <vibratoRange> <vibratoFrequency>'"<<endl;
+        return -1;
     }
     else
     {
@@ -59,6 +60,7 @@ int main(int argc, char* argv[])
         cout << "Wave file open error!";
         CAudioFileIf::destroy(phAudioFile);
         return -1;
+ 
     }
     phAudioFile->getFileSpec(stFileSpec);
     
@@ -88,6 +90,7 @@ int main(int argc, char* argv[])
     pCVibrato->setParam(CVibrato::kParamVibratoFrequency, fVibratoFrequency);
     pCVibrato->setParam(CVibrato::kParamVibratoRange, fVibratoRange);
 
+    cout << "reading, processing, and writing audio..." << endl;
     while (!phAudioFile->isEof())
     {
         // set block length variable
@@ -95,12 +98,12 @@ int main(int argc, char* argv[])
 
         // read data (iNumOfFrames might be updated!)
         phAudioFile->readData(ppfAudioData, iNumFrames);
-        cout << "\r" << "reading audio"<<endl;
+        //cout << "\r" << "reading audio"<<endl;
         
         // vibrato
         pCVibrato->process(ppfAudioData[0], ppfAudioDataOut[0], iNumFrames);
         
-        cout << "\r" << "Write audio"<<endl;
+        //cout << "\r" << "Write audio"<<endl;
         phAudioFileOut->writeData(ppfAudioDataOut, iNumFrames);
         
     }
@@ -123,6 +126,8 @@ int main(int argc, char* argv[])
     ppfAudioData = 0;
     ppfAudioDataOut = 0;
     // all done
+
+    
     return 0;
 }
 

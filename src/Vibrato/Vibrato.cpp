@@ -1,4 +1,5 @@
 #include "Vibrato.h"
+#include "Lfo.h"
 
 CVibrato::CVibrato():
     m_bIsInitialized(false),
