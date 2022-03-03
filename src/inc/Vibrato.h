@@ -5,6 +5,16 @@
 #include "Lfo.h"
 #include "RingBuffer.h"
 
+/*! \brief A vibrato using wavetable LFO
+* 
+* This interface is designed (100% copied) from the previous CCombFilterIf and
+* AudioFileIf classes to keep the repository in style.
+* The create and destroy function and the protected constructor and destructor
+* are probably designed to provide extra memory management to the user. However, 
+* I haven't looked into when the program throw an error and run out of the scope
+* of an instance, would this give memory issue or not. Modern C++ has things like
+* smart pointers to manage memories, don't know if it would be better to use that.
+*/
 
 class CVibrato
 {
