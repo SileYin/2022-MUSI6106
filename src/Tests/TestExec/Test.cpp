@@ -18,7 +18,7 @@ GTEST_API_ int main(int argc, char** argv) {
         cTestDataDir.assign(CMAKE_SOURCE_DIR);
         cTestDataDir.append("/src/Tests/TestData/");
     }
-
+    
     return RUN_ALL_TESTS();
 }
 
