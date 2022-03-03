@@ -5,7 +5,7 @@
 #include "Vibrato.h"
 #include "RingBuffer.h"
 #include "gtest/gtest.h"
-
+#include "Synthesis.h"
 
 namespace vibrato_test {
     void CHECK_ARRAY_CLOSE(float* buffer1, float* buffer2, int iLength, float fTolerance)
@@ -287,6 +287,31 @@ namespace vibrato_test {
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
+
+    TEST_F(Vibrato, SinDiffBound)
+    {
+        pCVibrato->init(0.01, 48000);
+        pfInputBuffer = new float[2048];
+        pfOutputBuffer = new float[2048];
+        pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 5);
+        pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.001);
+        CSynthesis::generateSine(pfInputBuffer, 200, 48000, 2048, 1.0, 0.0);
+        
+        pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
+        //CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 1e-3);
+        for(int i = 0; i < 1500; i++)
+        {
+            EXPECT_NEAR(pfInputBuffer[i], pfOutputBuffer[i+480], 2);
+        }
+        
+        delete[] pfInputBuffer;
+        delete[] pfOutputBuffer;
+        
+    }
+
+
+
+
 }
 
 #endif //WITH_TESTS
