@@ -1,6 +1,6 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/SileYin/2022-MUSI6106)
 ![GitHub issues](https://img.shields.io/github/issues-raw/SileYin/2022-MUSI6106)
-![GitHub last commit](https://img.shields.io/github/last-commit/SileYin/2022-MUSI6106)
+![GitHub last commit](https://img.shields.io/github/last-commit/SileYin/2022-MUSI6106/assignment2_vibrato)
 ![GitHub](https://img.shields.io/github/license/SileYin/2022-MUSI6106)
 
 # MUSI6106 2022: Audio Software Engineering
