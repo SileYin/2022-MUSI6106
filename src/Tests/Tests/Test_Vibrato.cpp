@@ -266,6 +266,27 @@ namespace vibrato_test {
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
+
+    TEST_F(Vibrato, PositiveValueStayPositive)
+    {
+        pCVibrato->init(0.01, 48000);
+        pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
+        pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
+        pfInputBuffer = new float[2048];
+        pfOutputBuffer = new float[2048];
+        for (int i = 0; i < 2048; i++)
+        {
+            pfInputBuffer[i] = i + 1 / 100;
+        }
+        pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
+        for (int i = 480; i < 2048; i++)
+        {
+            EXPECT_GE(pfOutputBuffer[i], 0);
+        }
+
+        delete[] pfInputBuffer;
+        delete[] pfOutputBuffer;
+    }
 }
 
 #endif //WITH_TESTS
