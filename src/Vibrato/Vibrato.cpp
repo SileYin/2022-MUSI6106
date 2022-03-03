@@ -43,11 +43,11 @@ Error_t CVibrato::init(float fDelayTimeInS, float fSampleRateInHz, int iLFOWavet
     m_fSampleRate = fSampleRateInHz;
     m_fDelayTimeInS = fDelayTimeInS;
 
-    int iMaxDelayLength = static_cast<int>(2 * m_fDelayTimeInS * m_fSampleRate) + 1;
+    int iMaxDelayLength = static_cast<int>(2 * std::round(m_fDelayTimeInS * m_fSampleRate)) + 2;
 
     m_pCLFO = new CWavetableLFO(iLFOWavetableLength, m_fSampleRate, m_fVibratoFrequencyInHz, m_fVibratoRangeInS * m_fSampleRate);
     m_pCRingBuff = new CRingBuffer<float>(iMaxDelayLength);
-    m_pCRingBuff->setReadIdx(static_cast<int>(m_fDelayTimeInS * m_fSampleRate) + 1);
+    m_pCRingBuff->setReadIdx(static_cast<int>(std::round(m_fDelayTimeInS * m_fSampleRate)) + 2);
     m_bIsInitialized = true;
 
     return Error_t::kNoError;
