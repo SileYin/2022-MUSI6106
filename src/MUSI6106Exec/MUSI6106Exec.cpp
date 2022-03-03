@@ -19,6 +19,11 @@ int main(int argc, char* argv[])
 
     showClInfo();
 
+    //input audio, set 3 parametes for the vibrato, delay time, and vibrato range, and vibrato rate
+    //output audio that is vibratoed.
+
+
+
 
 
     // all done
