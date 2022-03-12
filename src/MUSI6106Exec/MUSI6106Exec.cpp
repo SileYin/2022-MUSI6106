@@ -30,7 +30,6 @@ int main(int argc, char* argv[])
     float **ppfAudioDataOut = 0;
     CAudioFileIf *phAudioFile = 0;
     CAudioFileIf *phAudioFileOut = 0;
-    std::fstream hTestOutputFile;
     CAudioFileIf::FileSpec_t stFileSpec;
     CVibrato *pCVibrato = 0;
     float fVibratoRange = 0;

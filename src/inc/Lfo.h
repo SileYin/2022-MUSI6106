@@ -3,6 +3,8 @@
 
 #include "RingBuffer.h"
 #include <cmath>
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 class CWavetableLFO
 {
@@ -17,12 +19,11 @@ public:
         m_iSampleRate(iSampleRate),
         m_dReadIdx(0)
     {
-        double const l_dPi = 3.14159265358979323846;
         assert(iWavetableLength > 0);
         pCWavetableRingBuff = new CRingBuffer<float>(iWavetableLength);
         for (int i = 0; i < iWavetableLength; i++)
         {
-            pCWavetableRingBuff->putPostInc(sin(2 * l_dPi * i / iWavetableLength));
+            pCWavetableRingBuff->putPostInc(sin(2 * M_PI * i / iWavetableLength));
         }
         m_fAmplitude = fAmplitude; 
         m_dReadInc = static_cast<double>(pCWavetableRingBuff->getLength()) / static_cast<double>(m_iSampleRate) * fFrequency;
@@ -30,7 +31,7 @@ public:
 
     ~CWavetableLFO()
     {
-        delete pCWavetableRingBuff;
+        delete[] pCWavetableRingBuff;
         pCWavetableRingBuff = 0;
     }
 
@@ -41,7 +42,7 @@ public:
     {
         while (fPhaseInDegrees >= 360)
             fPhaseInDegrees -= 360;
-        while (fPhaseInDegrees < 360)
+        while (fPhaseInDegrees < 0)
             fPhaseInDegrees += 360;
         m_dReadIdx = fPhaseInDegrees / 360 * static_cast<double>(pCWavetableRingBuff->getLength());
     }
