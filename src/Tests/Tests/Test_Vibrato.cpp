@@ -38,6 +38,11 @@ namespace vibrato_test {
     class Vibrato : public testing::Test
     {
     protected:
+        Vibrato(){
+            fDelayInSec = 0.01f;
+            fSampleRateInHz = 48000.f;
+            fDelayInSample = static_cast<int>(fDelayInSec * fSampleRateInHz);
+        }
         void SetUp() override
         {
             CVibrato::create(pCVibrato);
@@ -51,6 +56,10 @@ namespace vibrato_test {
         float* pfInputBuffer;
         float* pfOutputBuffer;
         CVibrato* pCVibrato;
+        //init parameter
+        float fDelayInSec;
+        float fSampleRateInHz;
+        int   fDelayInSample;
     };
 
     TEST_F(RingBuffer, BufferLength)
@@ -155,7 +164,7 @@ namespace vibrato_test {
 
     TEST_F(Vibrato, ZeroAmplitude)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pfInputBuffer = new float[2048];
         pfOutputBuffer = new float[2048];
         for (int i = 0; i < 2048; i++)
@@ -163,14 +172,14 @@ namespace vibrato_test {
             pfInputBuffer[i] = sin(i / 100);
         }
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 1e-3);
+        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + fDelayInSample, 2048 - fDelayInSample, 1e-3);
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
 
     TEST_F(Vibrato, DCInputEqualOutput)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 10);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.005);
         pfInputBuffer = new float[2048];
@@ -194,7 +203,7 @@ namespace vibrato_test {
 
     TEST_F(Vibrato, VaryBlockSizeWithZeroAmplitude)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pfInputBuffer = new float[2048];
         pfOutputBuffer = new float[2048];
         for (int i = 0; i < 2048; i++)
@@ -206,14 +215,14 @@ namespace vibrato_test {
         {
             pCVibrato->process(pfInputBuffer + i, pfOutputBuffer + i, i);
         }
-        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 1e-3);
+        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + fDelayInSample, 2048 - fDelayInSample, 1e-3);
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
     }
 
     TEST_F(Vibrato, VaryBlockSizeWithDCInput)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 10);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.005);
         pfInputBuffer = new float[2048];
@@ -227,7 +236,7 @@ namespace vibrato_test {
         {
             pCVibrato->process(pfInputBuffer + i, pfOutputBuffer + i, i);
         }
-        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + 480, 2048 - 480 - 240, 1e-3);
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + fDelayInSample, 2048 - fDelayInSample - 240, 1e-3);
 
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
@@ -236,7 +245,7 @@ namespace vibrato_test {
         {
             pCVibrato->process(pfInputBuffer + i, pfOutputBuffer + i, i);
         }
-        CHECK_ARRAY_CLOSE(pfInputBuffer + 96, pfOutputBuffer + 96 + 480, 2048 - 480 - 96, 1e-3);
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 96, pfOutputBuffer + 96 + fDelayInSample, 2048 - fDelayInSample - 96, 1e-3);
 
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;
@@ -244,7 +253,7 @@ namespace vibrato_test {
 
     TEST_F(Vibrato, ZeroInput)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 10);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.005);
         pfInputBuffer = new float[2048];
@@ -254,7 +263,7 @@ namespace vibrato_test {
             pfInputBuffer[i] = 0;
         }
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + 480, 2048 - 480 - 240, 1e-3);
+        CHECK_ARRAY_CLOSE(pfInputBuffer + 240, pfOutputBuffer + 240 + fDelayInSample, 2048 - fDelayInSample - 240, 1e-3);
 
         pCVibrato->reset();
         pCVibrato->init(0.01, 48000);
@@ -269,7 +278,7 @@ namespace vibrato_test {
 
     TEST_F(Vibrato, PositiveValueStayPositive)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato->setParam(CVibrato::kParamVibratoRange, 0.002);
         pfInputBuffer = new float[2048];
@@ -293,7 +302,7 @@ namespace vibrato_test {
         CVibrato::create(pCVibrato_Test);
 
         // initialize and set values
-        pCVibrato_Test->init(0.01, 48000);
+        pCVibrato_Test->init(fDelayInSec, fSampleRateInHz);
         pCVibrato_Test->setParam(CVibrato::kParamVibratoFrequency, 20);
         pCVibrato_Test->setParam(CVibrato::kParamVibratoRange, 1);
         
@@ -306,7 +315,7 @@ namespace vibrato_test {
 
     TEST_F(Vibrato, SinDiffBound)
     {
-        pCVibrato->init(0.01, 48000);
+        pCVibrato->init(fDelayInSec, fSampleRateInHz);
         pfInputBuffer = new float[2048];
         pfOutputBuffer = new float[2048];
         pCVibrato->setParam(CVibrato::kParamVibratoFrequency, 5);
@@ -314,7 +323,7 @@ namespace vibrato_test {
         CSynthesis::generateSine(pfInputBuffer, 200, 48000, 2048, 1.0, 0.0);
         
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 2);
+        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + fDelayInSample, 2048 - fDelayInSample, 2);
         
         
         delete[] pfInputBuffer;
