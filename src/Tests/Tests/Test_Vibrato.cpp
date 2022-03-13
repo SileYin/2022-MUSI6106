@@ -314,11 +314,8 @@ namespace vibrato_test {
         CSynthesis::generateSine(pfInputBuffer, 200, 48000, 2048, 1.0, 0.0);
         
         pCVibrato->process(pfInputBuffer, pfOutputBuffer, 2048);
-        //CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 1e-3);
-        for(int i = 0; i < 1500; i++)
-        {
-            EXPECT_NEAR(pfInputBuffer[i], pfOutputBuffer[i+480], 2);
-        }
+        CHECK_ARRAY_CLOSE(pfInputBuffer, pfOutputBuffer + 480, 2048 - 480, 2);
+        
         
         delete[] pfInputBuffer;
         delete[] pfOutputBuffer;

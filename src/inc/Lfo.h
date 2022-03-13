@@ -31,7 +31,7 @@ public:
 
     ~CWavetableLFO()
     {
-        delete[] pCWavetableRingBuff;
+        delete pCWavetableRingBuff;
         pCWavetableRingBuff = 0;
     }
 
