@@ -7,7 +7,7 @@ class CCombFilterBase
 {
 public:
 	CCombFilterBase(int, int);
-	~CCombFilterBase();
+	virtual ~CCombFilterBase();
 	Error_t CCombFilterBase::setDelayLength(int iDelayInSample);
 	Error_t setGain(float g)
 	{
@@ -38,6 +38,7 @@ class CCombFIR : public CCombFilterBase
 {
 public:
 	using CCombFilterBase::CCombFilterBase;
+	~CCombFIR() {};
 	Error_t combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, int iNumberOfFrames) override;
 };
 
@@ -45,6 +46,7 @@ class CCombIIR : public CCombFilterBase
 {
 public:
 	using CCombFilterBase::CCombFilterBase;
+	~CCombIIR() {};
 	Error_t combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, int iNumberOfFrames) override;
 };
 
