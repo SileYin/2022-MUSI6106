@@ -132,14 +132,12 @@ Error_t CCombFilterIf::setParam (FilterParam_t eParam, float fParamValue)
     }
     if (eParam == FilterParam_t::kParamGain)
     {
-        assert(fabs(fParamValue) <= 1);
-        m_pCCombFilter->setGain(fParamValue);
+        return m_pCCombFilter->setGain(fParamValue);
     }
     else if (eParam == FilterParam_t::kParamDelay)
     {
-        assert(fParamValue > 0);
         int iDelayLength = static_cast<int>(fParamValue * m_fSampleRate);
-        m_pCCombFilter->setDelayLength(iDelayLength);
+        return m_pCCombFilter->setDelayLength(iDelayLength);
     }
     else
     {
@@ -150,5 +148,13 @@ Error_t CCombFilterIf::setParam (FilterParam_t eParam, float fParamValue)
 
 float CCombFilterIf::getParam (FilterParam_t eParam) const
 {
+    if (eParam == FilterParam_t::kParamGain)
+    {
+        return m_pCCombFilter->getGainValue();
+    }
+    else if (eParam == FilterParam_t::kParamDelay)
+    {
+        return m_pCCombFilter->getDelayLength() / m_fSampleRate;
+    }
     return 0;
 }

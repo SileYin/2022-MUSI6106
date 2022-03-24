@@ -9,7 +9,7 @@ CCombFilterBase::CCombFilterBase(int iMaxDelayInSamples, int iNumChannels)
 	pCRingBuff = new CRingBuffer<float>*[m_iNumChannels];
 	for (int i = 0; i < m_iNumChannels; ++i)
 	{
-		pCRingBuff[i] = new CRingBuffer<float>(m_iMaxDelayLength);
+		pCRingBuff[i] = new CRingBuffer<float>(m_iMaxDelayLength + 1);
 	}
 }
 
@@ -26,7 +26,7 @@ CCombFilterBase::~CCombFilterBase()
 
 Error_t CCombFilterBase::setDelayLength(int iDelayInSample)
 {
-	if (iDelayInSample > m_iMaxDelayLength)
+	if (iDelayInSample > m_iMaxDelayLength || iDelayInSample < 0)
 	{
 		return Error_t::kNumErrors;
 	}
@@ -34,7 +34,7 @@ Error_t CCombFilterBase::setDelayLength(int iDelayInSample)
 	for (int i = 0; i < m_iNumChannels; ++i)
 	{
 		pCRingBuff[i]->reset();
-		pCRingBuff[i]->setReadIdx(m_iMaxDelayLength - m_iDelayLength);
+		pCRingBuff[i]->setReadIdx(m_iMaxDelayLength + 1 - m_iDelayLength);
 	}
 	return Error_t::kNoError;
 }
@@ -45,8 +45,8 @@ Error_t CCombFIR::combFilter(float** ppfInputBuffer, float** ppfOutputBuffer, in
 	{
 		for (int j = 0; j < iNumberOfFrames; ++j)
 		{
-			ppfOutputBuffer[i][j] = ppfInputBuffer[i][j] + m_fGain * pCRingBuff[i]->getPostInc();
 			pCRingBuff[i]->putPostInc(ppfInputBuffer[i][j]);
+			ppfOutputBuffer[i][j] = ppfInputBuffer[i][j] + m_fGain * pCRingBuff[i]->getPostInc();
 		}
 	}
 	return Error_t::kNoError;

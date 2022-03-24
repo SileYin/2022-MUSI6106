@@ -11,6 +11,8 @@ public:
 	Error_t CCombFilterBase::setDelayLength(int iDelayInSample);
 	Error_t setGain(float g)
 	{
+		if (fabs(g) > 1)
+			return Error_t::kNumErrors;
 		m_fGain = g;
 		return Error_t::kNoError;
 	}

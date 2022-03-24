@@ -296,6 +296,7 @@ void testVaryBlockSize(CCombFilterIf::CombFilterType_t eFilterType, int iCycleIn
 
     CCombFilterIf::create(phCombFilter);
     phCombFilter->init(eFilterType, static_cast<float>(iCycleInSamples) / static_cast<float>(iSampleRateInHz), static_cast<float>(iSampleRateInHz), 2);
+    phCombFilter->setParam(CCombFilterIf::kParamDelay, static_cast<float>(iCycleInSamples) / static_cast<float>(iSampleRateInHz));
     if (eFilterType == CCombFilterIf::kCombFIR)
     {
         phCombFilter->setParam(CCombFilterIf::kParamGain, -1);
