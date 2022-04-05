@@ -7,6 +7,8 @@
 #include "AudioFileIf.h"
 #include "Vibrato.h"
 
+#include "Fft.h"
+
 using std::cout;
 using std::endl;
 
@@ -46,6 +48,46 @@ int main(int argc, char* argv[])
     // command line args
     if (argc < 5)
     {
+        CFft* pCFft;
+        CFft::createInstance(pCFft);
+        pCFft->initInstance(64, 1, CFft::kWindowHann, CFft::kNoWindow);
+
+        float impulse[64]{ 0 };
+        float sequence[64]{ 0 };
+        for (int i = 0; i < 32; i++)
+        {
+            impulse[i] = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        }
+        sequence[32] = 1;
+
+        CFft::complex_t temp[64];
+
+        
+
+        float impulseRe[33]{ 0 };
+        float impulseIm[33]{ 0 };
+        pCFft->doFft(temp, impulse);
+        pCFft->splitRealImag(impulseRe, impulseIm, temp);
+
+        float sequenceRe[33]{ 0 };
+        float sequenceIm[33]{ 0 };
+        pCFft->doFft(temp, sequence);
+        pCFft->splitRealImag(sequenceRe, sequenceIm, temp);
+
+        float outputRe[33]{ 0 };
+        float outputIm[33]{ 0 };
+
+        for (int i = 0; i <= 32; i++)
+        {
+            outputRe[i] = (impulseRe[i] * sequenceRe[i] - impulseIm[i] * sequenceIm[i]) * 64;
+            outputIm[i] = (impulseRe[i] * sequenceIm[i] + impulseIm[i] * sequenceRe[i]) * 64;
+        }
+
+        pCFft->mergeRealImag(temp, outputRe, outputIm);
+
+        float output[64]{ 0 };
+        pCFft->doInvFft(output, temp);
+
         cout << "Incorrect number of arguments!" << endl;
         return -1;
     }

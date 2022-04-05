@@ -5,6 +5,10 @@
 #pragma once
 
 #include "ErrorDef.h"
+#include "RingBuffer.h"
+#include "Fft.h"
+
+class CConvBase;
 
 /*! \brief interface for fast convolution
 */
@@ -50,8 +54,10 @@ public:
     Error_t flushBuffer(float* pfOutputBuffer);
 
 private:
-
+    bool bIsInitialized;
+    CConvBase* pImpl = 0;
 };
+
 
 
 #endif
