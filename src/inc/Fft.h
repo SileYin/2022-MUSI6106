@@ -89,7 +89,7 @@ public:
     Error_t getPhase(float *pfPhase, const complex_t *pfSpectrum) const;
     /*! get real and imaginary part from complex spectrum
     \param float * pfReal: resulting real part of length (iBlockLength * iZeroPadFactor)/2+1 (\sa initInstance) 
-    \param float * pfImag: resulting imaginary part of length (iBlockLength * iZeroPadFactor)/2 (\sa initInstance)
+    \param float * pfImag: resulting imaginary part of length (iBlockLength * iZeroPadFactor)/2+1 (\sa initInstance)
     \param const complex_t * pfSpectrum: input spectrum of length iBlockLength * iZeroPadFactor (\sa initInstance)
     \return Error_t
     */
@@ -97,7 +97,7 @@ public:
     /*! merge real and imaginary parts into complex spectrum
     \param complex_t * pfSpectrum: resulting spectrum of length iBlockLength * iZeroPadFactor (\sa initInstance)
     \param const float * pfReal: input real part of length (iBlockLength * iZeroPadFactor)/2+1 (\sa initInstance) 
-    \param const float * pfImag: input imaginary part of length (iBlockLength * iZeroPadFactor)/2 (\sa initInstance)
+    \param const float * pfImag: input imaginary part of length (iBlockLength * iZeroPadFactor)/2+1 (\sa initInstance)
     \return Error_t
     */
     Error_t mergeRealImag(complex_t *pfSpectrum, const float *pfReal, const float *pfImag) const;
