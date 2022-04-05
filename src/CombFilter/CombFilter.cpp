@@ -107,7 +107,7 @@ bool CCombFilterBase::isInParamRange( CCombFilterIf::FilterParam_t eParam, float
     }
 }
 
-Error_t CCombFilterFir::process( float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames )
+Error_t CCombFilterFir::process(float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames )
 {
     for(int c = 0; c < m_iNumChannels; c++)
     {
@@ -128,7 +128,7 @@ CCombFilterIir::CCombFilterIir (int iMaxDelayInFrames, int iNumChannels) : CComb
     m_aafParamRange[CCombFilterIf::kParamGain][1] = 1.F;
 }
 
-Error_t CCombFilterIir::process( float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames )
+Error_t CCombFilterIir::process(float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames )
 {
     for(int c = 0; c < m_iNumChannels; c++)
     {

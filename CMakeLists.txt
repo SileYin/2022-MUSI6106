@@ -33,6 +33,7 @@ list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/${PROJECT_NAME}Exec)
 list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/AudioFileIO) 
 list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/CombFilter) 
 list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/Fft) 
+list (APPEND PROJECT_DIRECTORIES ${CMAKE_SOURCE_DIR}/src/Vibrato) 
     
 # set includes
 set (PROJECT_INCLUDES)
@@ -65,6 +66,7 @@ if (WITH_TESTS)
     add_test(AudioIo ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestExec --gtest_filter=AudioIo* "${CMAKE_SOURCE_DIR}/src/Tests/TestData/")
     add_test(CombFilter ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestExec --gtest_filter=CombFilter*)
     add_test(Fft ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestExec --gtest_filter=Fft*)
+    add_test(Vibrato ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/TestExec --gtest_filter=Vibrato*)
 endif (WITH_TESTS)
 
 #######################################################################################################
@@ -79,7 +81,7 @@ if(WITH_DOXYGENTARGET)
     message(FATAL_ERROR 
       "Doxygen is needed to build the documentation. Please install it correctly")
     endif(NOT DOXYGEN_FOUND)
-  
+
     #-- Add a custom target to run Doxygen when ever the project is built
     add_custom_target (Doxy_documentation  
             COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/docs/doxy.config

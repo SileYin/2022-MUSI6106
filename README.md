@@ -24,6 +24,7 @@ Template project for assignments and exercises for the class MUSI6106
 	|_ TestData: data for specific tests possibly requiring data
 	|_ TestExec: test executable
 	|_ Tests: individual test implementations (one file per target)
+  |_ Vibrato: library for a vibrato effect
 ```
 
 ## Creating the Project Files with CMake
@@ -41,6 +42,8 @@ cmake -B ./bld/ -DCMAKE_BUILD_TYPE=DEBUG
 cmake --build ./bld/ --config Debug
 ```
 Enable ```WITH_TESTS``` to build with GTest support and ```WITH_DOXYGENTARGET``` to add a target for creating a doxygen documentation for your project.
+
+If new files are added, clear the cache and rerun configuration and generation.
 
 If new files are added, clear the cache and rerun configuration and generation.
 

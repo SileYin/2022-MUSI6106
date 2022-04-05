@@ -27,11 +27,9 @@ source_group (Tests FILES ${APP}_SOURCES_TEST ${APP}_HEADERS_TEST)
 ## add include directories
 add_inc_directories ()
 
-# if (WITH_TESTS)
-    add_executable(${APP} ${${APP}_SOURCES} ${${APP}_HEADERS} ${${APP}_SOURCES_TEST} ${${APP}_HEADERS_TEST})
+add_executable(${APP} ${${APP}_SOURCES} ${${APP}_HEADERS} ${${APP}_SOURCES_TEST} ${${APP}_HEADERS_TEST})
 
-    # link the libraries
-    target_link_libraries(${APP} ${LIB} ${TestLIB} ${FftLIB} ${FilterLIB} ${AudioLIB} ${SndLIB} ${OS_LIBS})
-#endif (WITH_TESTS)
+# link the libraries
+target_link_libraries(${APP} ${LIB} ${TestLIB} ${FftLIB} ${VibratoLIB} ${FilterLIB} ${AudioLIB} ${SndLIB} ${OS_LIBS})
 
 

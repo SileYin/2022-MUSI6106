@@ -205,7 +205,8 @@ Error_t CFft::splitRealImag( float *pfReal, float *pfImag, const complex_t *pfSp
 
     CVectorFloat::copy(pfReal, pfSpectrum, iNyq+1);
 
-    pfImag[0]       = 0;
+    pfImag[0] = 0;
+    pfImag[iNyq] = 0;
     for (int i = 1, iImag = m_iFftLength-1; i < iNyq; i++, iImag--)
     {
         pfImag[i]   = pfSpectrum[iImag];
@@ -224,7 +225,7 @@ Error_t CFft::mergeRealImag( complex_t *pfSpectrum, const float *pfReal, const f
 
     CVectorFloat::copy(pfSpectrum, pfReal, iNyq+1);
 
-    for (int i = 1, iImag = m_iFftLength-1; i < iNyq-1; i++, iImag--)
+    for (int i = 1, iImag = m_iFftLength-1; i < iNyq; i++, iImag--)
     {
         pfSpectrum[iImag]   = pfImag[i];
     }

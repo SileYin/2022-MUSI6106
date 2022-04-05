@@ -56,26 +56,26 @@ const char*  CCombFilterIf::getBuildDate ()
     return kCMyProjectBuildDate;
 }
 
-Error_t CCombFilterIf::create( CCombFilterIf*& pCMyProject )
+Error_t CCombFilterIf::create( CCombFilterIf*& pCCombFilterIf )
 {
-    pCMyProject = new CCombFilterIf ();
+    pCCombFilterIf = new CCombFilterIf ();
 
-    if (!pCMyProject)
+    if (!pCCombFilterIf)
         return Error_t::kUnknownError;
 
 
     return Error_t::kNoError;
 }
 
-Error_t CCombFilterIf::destroy (CCombFilterIf*& pCMyProject)
+Error_t CCombFilterIf::destroy (CCombFilterIf*& pCCombFilterIf)
 {
-    if (!pCMyProject)
+    if (!pCCombFilterIf)
         return Error_t::kUnknownError;
     
-    pCMyProject->reset ();
+    pCCombFilterIf->reset ();
     
-    delete pCMyProject;
-    pCMyProject = 0;
+    delete pCCombFilterIf;
+    pCCombFilterIf = 0;
 
     return Error_t::kNoError;
 
@@ -117,7 +117,7 @@ Error_t CCombFilterIf::reset ()
     return Error_t::kNoError;
 }
 
-Error_t CCombFilterIf::process( float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames )
+Error_t CCombFilterIf::process(float **ppfInputBuffer, float **ppfOutputBuffer, int iNumberOfFrames )
 {
     if (!m_bIsInitialized)
         return Error_t::kNotInitializedError;

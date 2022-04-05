@@ -56,6 +56,31 @@ namespace fft_test {
         CFft *m_pCFftInstance;
     };
 
+    TEST_F(Fft, Impulse)
+    {
+        // impulse with impulse
+        int iBlockLength = 4;
+        CVector::setZero(m_pfTime, iBlockLength);
+        m_pfTime[1] = 1;
+        m_pCFftInstance->initInstance(iBlockLength, 1, CFft::kWindowHann, CFft::kNoWindow);
+        m_pCFftInstance->doFft(m_pfFreq, m_pfTime);
+        m_pCFftInstance->doInvFft(m_pfTmp, m_pfFreq);
+
+        EXPECT_NEAR(1.F, m_pfTmp[1], 1e-6);
+        EXPECT_NEAR(1.F, CVectorFloat::getSum(m_pfTmp, iBlockLength), 1e-6);
+
+        m_pCFftInstance->initInstance(iBlockLength, 2, CFft::kWindowHann, CFft::kNoWindow);
+        m_pfTime[0] = 1;
+        m_pfTime[1] = 0;
+        m_pCFftInstance->doFft(m_pfFreq, m_pfTime);
+        m_pCFftInstance->doInvFft(m_pfTmp, m_pfFreq);
+
+        EXPECT_NEAR(1.F, m_pfTmp[0], 1e-6);
+        EXPECT_NEAR(1.F, CVectorFloat::getSum(m_pfTmp, iBlockLength), 1e-6);
+
+        m_pCFftInstance->initInstance(m_iFftLength, 1, CFft::kWindowHann, CFft::kNoWindow);
+    }
+    
     TEST_F(Fft, SimpleSine)
     {
         CSynthesis::generateSine(m_pfTime, 2.F, 1.F*m_iFftLength, m_iFftLength, 1.F, 0);

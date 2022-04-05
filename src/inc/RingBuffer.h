@@ -99,11 +99,28 @@ public:
     }
 
     /*! return the value at the current read index
+    \param fOffset: read at offset from read index
     \return float the value from the read index
     */
-    T get() const
+    T get(float fOffset = 0) const
     {
-        return m_ptBuff[m_iReadIdx];
+        if (fOffset == 0)
+            return m_ptBuff[m_iReadIdx];
+        else
+        {
+
+            // compute fraction for linear interpolation 
+            int     iOffset = static_cast<int>(std::floor(fOffset));
+            float   fFrac = fOffset - iOffset;
+            int     iRead = m_iReadIdx + iOffset;
+            while (iRead > m_iBuffLength - 1)
+                iRead -= m_iBuffLength;
+            while (iRead < 0)
+                iRead += m_iBuffLength;
+
+            return (1 - fFrac) * m_ptBuff[iRead] +
+                fFrac * m_ptBuff[(iRead + 1) % m_iBuffLength];
+        }
     }
 
     /*! return the values starting at the current read index
