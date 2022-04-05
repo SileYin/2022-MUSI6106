@@ -81,7 +81,6 @@ public:
         m_iWriteIdx(0)
     {
         m_iBlockNum = static_cast<int>(std::ceil(static_cast<float>(m_iLengthOfIr) / static_cast<float>(m_iBlockLength)));
-        m_iNextBlockIdx = (m_iWriteBlockIdx + 1) % m_iBlockNum;
         m_iReadBlockIdx = m_iBlockNum - 1;
 
         CFft::createInstance(pcFFT);
@@ -97,13 +96,12 @@ public:
 
         m_ppfIRFreqDomainReal = new float* [m_iBlockNum];
         m_ppfIRFreqDomainImag = new float* [m_iBlockNum];
-        m_ppfInputBlockBuffer = new float* [m_iBlockNum];
+        m_pfInputBlockBuffer = new float[2 * m_iBlockLength]{ 0 };
         m_ppfProcessedBlockBuffer = new float* [m_iBlockNum];
         for (int i = 0; i < m_iBlockNum; i++)
         {
             m_ppfIRFreqDomainReal[i] = new float[m_iBlockLength + 1]{ 0 };
             m_ppfIRFreqDomainImag[i] = new float[m_iBlockLength + 1]{ 0 };
-            m_ppfInputBlockBuffer[i] = new float[2 * m_iBlockLength]{ 0 };
             m_ppfProcessedBlockBuffer[i] = new float[m_iBlockLength] {0};
             for (int j = 0; j < m_iBlockLength; j++)
             {
@@ -125,19 +123,18 @@ public:
     {
         for (int i = 0; i < m_iBlockNum; i++)
         {
-            delete[] m_ppfInputBlockBuffer[i];
             delete[] m_ppfProcessedBlockBuffer[i];
             delete[] m_ppfIRFreqDomainReal[i];
             delete[] m_ppfIRFreqDomainImag[i];
         }
         delete[] m_ppfIRFreqDomainReal;
         delete[] m_ppfIRFreqDomainImag;
-        delete[] m_ppfInputBlockBuffer;
+        delete[] m_pfInputBlockBuffer;
         delete[] m_ppfProcessedBlockBuffer;
 
         m_ppfIRFreqDomainReal = 0;
         m_ppfIRFreqDomainImag = 0;
-        m_ppfInputBlockBuffer = 0;
+        m_pfInputBlockBuffer = 0;
         m_ppfProcessedBlockBuffer = 0;
 
         delete[] pfIFFTTemp;
@@ -166,10 +163,11 @@ public:
             assert(m_iWriteIdx + m_iBlockLength < 2 * m_iBlockLength);
             assert(m_iReadBlockIdx < m_iBlockNum);
             assert(m_iWriteBlockIdx < m_iBlockNum);
-            assert(m_iNextBlockIdx < m_iBlockNum);
 
-            m_ppfInputBlockBuffer[m_iWriteBlockIdx][m_iWriteIdx + m_iBlockLength] = pfInputBuffer[i];
-            m_ppfInputBlockBuffer[m_iNextBlockIdx][m_iWriteIdx] = pfInputBuffer[i];
+            //m_ppfInputBlockBuffer[m_iWriteBlockIdx][m_iWriteIdx + m_iBlockLength] = pfInputBuffer[i];
+            //m_ppfInputBlockBuffer[m_iNextBlockIdx][m_iWriteIdx] = pfInputBuffer[i];
+
+            m_pfInputBlockBuffer[m_iWriteIdx + m_iBlockLength] = pfInputBuffer[i];
 
             pfOutputBuffer[i] = m_ppfProcessedBlockBuffer[m_iReadBlockIdx][m_iWriteIdx];
 
@@ -182,7 +180,7 @@ public:
                 {
                     m_ppfProcessedBlockBuffer[m_iReadBlockIdx][j] = 0;
                 }
-                pcFFT->doFft(pfComplexTemp, m_ppfInputBlockBuffer[m_iWriteBlockIdx]);
+                pcFFT->doFft(pfComplexTemp, m_pfInputBlockBuffer);
                 pcFFT->splitRealImag(pfCurrentBlockFFTReal, pfCurrentBlockFFTImag, pfComplexTemp);
                 for (int j = 0; j < m_iBlockNum; j++)
                 { 
@@ -196,10 +194,13 @@ public:
                         m_ppfProcessedBlockBuffer[(m_iWriteBlockIdx + j) % m_iBlockNum][k] += pfIFFTTemp[k + m_iBlockLength];
                     }
                 }
+                for (int j = 0; j < m_iBlockLength; j++)
+                {
+                    m_pfInputBlockBuffer[j] = m_pfInputBlockBuffer[j + m_iBlockLength];
+                }
 
                 m_iReadBlockIdx = m_iWriteBlockIdx;
-                m_iWriteBlockIdx = m_iNextBlockIdx;
-                m_iNextBlockIdx = (m_iWriteBlockIdx + 1) % m_iBlockNum;
+                m_iWriteBlockIdx = (m_iWriteBlockIdx + 1) % m_iBlockNum;
             }
         }
     }
@@ -229,12 +230,11 @@ private:
 
     int m_iReadBlockIdx;
     int m_iWriteBlockIdx;
-    int m_iNextBlockIdx;
     int m_iWriteIdx;
 
     float** m_ppfIRFreqDomainReal = 0;
     float** m_ppfIRFreqDomainImag = 0;
-    float** m_ppfInputBlockBuffer = 0;
+    float* m_pfInputBlockBuffer = 0;
     float** m_ppfProcessedBlockBuffer = 0;
 
     float* pfFFTRealTemp = 0;
