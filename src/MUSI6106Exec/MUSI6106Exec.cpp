@@ -43,85 +43,23 @@ int main(int argc, char* argv[])
     showClInfo();
 
 
-    // command line args
-    if (argc < 5)
-    {
-        cout << "Incorrect number of arguments!" << endl;
-        return -1;
-    }
-    sInputFilePath = argv[1];
-    sOutputFilePath = argv[2];
-    fModFrequencyInHz = atof(argv[3]);
-    fModWidthInSec = atof(argv[4]);
-
-    ///////////////////////////////////////////////////////////////////////////
-    CAudioFileIf::create(phAudioFile);
-    CAudioFileIf::create(phAudioOutputFile);
-
-    phAudioFile->openFile(sInputFilePath, CAudioFileIf::kFileRead);
-    phAudioFile->getFileSpec(stFileSpec);
-    phAudioOutputFile->openFile(sOutputFilePath, CAudioFileIf::kFileWrite, &stFileSpec);
-    iNumChannels = stFileSpec.iNumChannels;
-    if (!phAudioFile->isOpen())
-    {
-        cout << "Input file open error!";
-
-        CAudioFileIf::destroy(phAudioFile);
-        CAudioFileIf::destroy(phAudioOutputFile);
-        return -1;
-    }
-    else if (!phAudioOutputFile->isOpen())
-    {
-        cout << "Output file cannot be initialized!";
-
-        CAudioFileIf::destroy(phAudioFile);
-        CAudioFileIf::destroy(phAudioOutputFile);
-        return -1;
-    }
-    ////////////////////////////////////////////////////////////////////////////
-    CVibrato::create(pCVibrato);
-    pCVibrato->init(fModWidthInSec, stFileSpec.fSampleRateInHz, iNumChannels);
-
+    //////////////////////////////////////////////////////////////////////////////
+    // parse command line arguments
+ 
+    //////////////////////////////////////////////////////////////////////////////
+    // open the input wave file
+ 
+    //////////////////////////////////////////////////////////////////////////////
+    // open the output text file
+ 
+    //////////////////////////////////////////////////////////////////////////////
     // allocate memory
-    ppfInputAudio = new float* [stFileSpec.iNumChannels];
-    for (int i = 0; i < stFileSpec.iNumChannels; i++)
-        ppfInputAudio[i] = new float[kBlockSize];
-
-    ppfOutputAudio = new float* [stFileSpec.iNumChannels];
-    for (int i = 0; i < stFileSpec.iNumChannels; i++)
-        ppfOutputAudio[i] = new float[kBlockSize];
-
-    // Set parameters of vibrato
-    pCVibrato->setParam(CVibrato::kParamModFreqInHz, fModFrequencyInHz);
-    pCVibrato->setParam(CVibrato::kParamModWidthInS, fModWidthInSec);
-
-    // processing
-    while (!phAudioFile->isEof())
-    {
-        phAudioFile->readData(ppfInputAudio, iNumFrames);
-        pCVibrato->process(ppfInputAudio, ppfOutputAudio, iNumFrames);
-        phAudioOutputFile->writeData(ppfOutputAudio, iNumFrames);
-    }
-    phAudioFile->getFileSpec(stFileSpec);
-
-
-    cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
+ 
+    //////////////////////////////////////////////////////////////////////////////
+    // get audio data and write it to the output text file (one column per channel)
 
     //////////////////////////////////////////////////////////////////////////////
-    // clean-up
-    CAudioFileIf::destroy(phAudioFile);
-    CAudioFileIf::destroy(phAudioOutputFile);
-    CVibrato::destroy(pCVibrato);
-
-    for (int i = 0; i < stFileSpec.iNumChannels; i++)
-    {
-        delete[] ppfInputAudio[i];
-        delete[] ppfOutputAudio[i];
-    }
-    delete[] ppfInputAudio;
-    delete[] ppfOutputAudio;
-    ppfInputAudio = 0;
-    ppfOutputAudio = 0;
+    // clean-up (close files and free memory)
 
     // all done
     return 0;
