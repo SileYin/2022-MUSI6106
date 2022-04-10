@@ -189,9 +189,10 @@ public:
                         m_ppfIRFreqDomainReal[j], m_ppfIRFreqDomainImag[j]);
                     pcFFT->mergeRealImag(pfComplexTemp, pfFFTRealTemp, pfFFTImagTemp);
                     pcFFT->doInvFft(pfIFFTTemp, pfComplexTemp);
+                    const int l_iWriteBlockNum = (m_iWriteBlockIdx + j) % m_iBlockNum;
                     for (int k = 0; k < m_iBlockLength; k++)
                     {
-                        m_ppfProcessedBlockBuffer[(m_iWriteBlockIdx + j) % m_iBlockNum][k] += pfIFFTTemp[k + m_iBlockLength];
+                        m_ppfProcessedBlockBuffer[l_iWriteBlockNum][k] += pfIFFTTemp[k + m_iBlockLength];
                     }
                 }
                 for (int j = 0; j < m_iBlockLength; j++)
