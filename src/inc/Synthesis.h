@@ -2,7 +2,7 @@
 #define __Synthesis_hdr__
 
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 #include <cstdlib>
 
 #include "ErrorDef.h"

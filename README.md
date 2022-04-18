@@ -17,7 +17,8 @@ Template project for assignments and exercises for the class MUSI6106
 |_ inc: global headers
 |_ src: source code
   |_ AudioFileIO: library wrapping sndfile (3rdparty)
-  |_ CombFilter: combfilter library (assignment 1)
+  |_ CombFilter: combfilter library 
+  |_ Dtw: library for DTW 
   |_ inc: internal headers
   |_ MUSI6106Exec: code for executable binary
   |_ Tests: all code related to tests
