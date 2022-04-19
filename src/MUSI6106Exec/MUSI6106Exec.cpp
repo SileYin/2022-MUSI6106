@@ -43,13 +43,6 @@ static int patestCallback ( const void *inputBuffer,
         data->bLastBufferPlayed = true;
         return 0;
     }
-    
-
-    if (data->bReachedEndOfFile)
-    {
-        data->bLastBufferLoaded = true;
-        return 0;
-    }
 
 
     if (!data->bRingBufferIsFull)
@@ -73,6 +66,11 @@ static int patestCallback ( const void *inputBuffer,
         {
             *out++ = 0.f;
         }
+    }
+
+    if (data->bReachedEndOfFile)
+    {
+        data->bLastBufferLoaded = true;
     }
 
     data->bRingBufferIsFull = false;
