@@ -7,7 +7,7 @@
 class CConvBase
 {
 public:
-    CConvBase(float* pfImpulseResponse, int iLengthOfIr, int iBlockLength) :
+    CConvBase(float*, int iLengthOfIr, int iBlockLength) :
         m_iLengthOfIr(iLengthOfIr),
         m_iBlockLength(iBlockLength)
     {
@@ -217,7 +217,6 @@ private:
 
     void complexMultiplication(float* pfOutReal, float* pfOutImag, const float* pfSignalReal, const float* pfSignalImag, const float* pfIRReal, const float* pfIRImag)
     {
-        float tempRe, tempIm;
         for (int i = 0; i <= m_iBlockLength; i++)
         {
             pfOutReal[i] = (pfSignalReal[i] * pfIRReal[i] - pfSignalImag[i] * pfIRImag[i]) * 2 * m_iBlockLength;
