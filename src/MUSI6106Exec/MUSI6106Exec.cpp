@@ -9,6 +9,8 @@
 
 #include "Fft.h"
 
+#include "FastConv.h"
+
 using std::cout;
 using std::endl;
 
@@ -21,26 +23,37 @@ int main(int argc, char* argv[])
 {
 
     std::string             sInputFilePath,                 //!< file paths
-        sOutputFilePath;
+        sOutputFilePath, sIrPath;
 
     static const int            kBlockSize = 1024;
+    static const int            iFastConvBlockLength = 8192;
     long long                   iNumFrames = kBlockSize;
     int                         iNumChannels;
-
-    float                       fModFrequencyInHz;
-    float                       fModWidthInSec;
 
     clock_t                     time = 0;
 
     float** ppfInputAudio = 0;
     float** ppfOutputAudio = 0;
 
+    float** ppfImpulse = 0;
+
+    float** ppfFlushBuffer = 0;
+
+    long long iImpulseLength = 0;
+
+    int iFlushBufferLength = 0;
+
+    CAudioFileIf* phImpluseFile = 0;
     CAudioFileIf* phAudioFile = 0;
     CAudioFileIf* phAudioOutputFile = 0;
 
-    CAudioFileIf::FileSpec_t    stFileSpec;
+    CAudioFileIf::FileSpec_t    stFileSpec, stIrSpec, stOutputFileSpec;
 
-    CVibrato* pCVibrato = 0;
+    CFastConv::ConvCompMode_t eCompMode = CFastConv::kTimeDomain;
+
+    CFastConv** pphFastConv = 0;
+
+    bool bUseFastConv = false;
 
     showClInfo();
 
@@ -48,71 +61,129 @@ int main(int argc, char* argv[])
     // command line args
     if (argc < 5)
     {
-        CFft* pCFft;
-        CFft::createInstance(pCFft);
-        pCFft->initInstance(64, 1, CFft::kWindowHann, CFft::kNoWindow);
-
-        float impulse[64]{ 0 };
-        float sequence[64]{ 0 };
-        for (int i = 0; i < 32; i++)
-        {
-            impulse[i] = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
-        }
-        sequence[32] = 1;
-
-        CFft::complex_t temp[64];
-
-        
-
-        float impulseRe[33]{ 0 };
-        float impulseIm[33]{ 0 };
-        pCFft->doFft(temp, impulse);
-        pCFft->splitRealImag(impulseRe, impulseIm, temp);
-
-        float sequenceRe[33]{ 0 };
-        float sequenceIm[33]{ 0 };
-        pCFft->doFft(temp, sequence);
-        pCFft->splitRealImag(sequenceRe, sequenceIm, temp);
-
-        float outputRe[33]{ 0 };
-        float outputIm[33]{ 0 };
-
-        for (int i = 0; i <= 32; i++)
-        {
-            outputRe[i] = (impulseRe[i] * sequenceRe[i] - impulseIm[i] * sequenceIm[i]) * 64;
-            outputIm[i] = (impulseRe[i] * sequenceIm[i] + impulseIm[i] * sequenceRe[i]) * 64;
-        }
-
-        pCFft->mergeRealImag(temp, outputRe, outputIm);
-
-        float output[64]{ 0 };
-        pCFft->doInvFft(output, temp);
-
-        cout << "Incorrect number of arguments!" << endl;
-        return -1;
+        cout << "Not enough input arguments!\n";
+        cout << "arguments: <PATH_TO_AUDIO> <PATH_TO_IR> <PATH_TO_OUTPUT> <USING_FAST_CONV(1 is true)>";
     }
     sInputFilePath = argv[1];
-    sOutputFilePath = argv[2];
-    fModFrequencyInHz = atof(argv[3]);
-    fModWidthInSec = atof(argv[4]);
+    sIrPath = argv[2];
+    sOutputFilePath = argv[3];
+
+    bUseFastConv = static_cast<bool>(std::stoi(argv[4]));
+
+    if (bUseFastConv)
+    {
+        eCompMode = CFastConv::kFreqDomain;
+    }
 
     ///////////////////////////////////////////////////////////////////////////
+    CAudioFileIf::create(phImpluseFile);
     CAudioFileIf::create(phAudioFile);
     CAudioFileIf::create(phAudioOutputFile);
 
+    phImpluseFile->openFile(sIrPath, CAudioFileIf::kFileRead);
+    phImpluseFile->getFileSpec(stIrSpec);
     phAudioFile->openFile(sInputFilePath, CAudioFileIf::kFileRead);
     phAudioFile->getFileSpec(stFileSpec);
-    phAudioOutputFile->openFile(sOutputFilePath, CAudioFileIf::kFileWrite, &stFileSpec);
-    iNumChannels = stFileSpec.iNumChannels;
+    phAudioFile->getFileSpec(stOutputFileSpec);
+
     if (!phAudioFile->isOpen())
     {
         cout << "Input file open error!";
 
         CAudioFileIf::destroy(phAudioFile);
         CAudioFileIf::destroy(phAudioOutputFile);
+        CAudioFileIf::destroy(phImpluseFile);
         return -1;
     }
-    else if (!phAudioOutputFile->isOpen())
+
+
+    phImpluseFile->getLength(iImpulseLength);
+
+    ppfImpulse = new float* [stIrSpec.iNumChannels];
+
+    for (int i = 0; i < stIrSpec.iNumChannels; i++)
+    {
+        ppfImpulse[i] = new float[iImpulseLength];
+    }
+
+    if (bUseFastConv)
+    {
+        iFlushBufferLength = iFastConvBlockLength + iImpulseLength - 1;
+    }
+    else
+    {
+        iFlushBufferLength = iImpulseLength - 1;
+    }
+
+    if (abs(stIrSpec.fSampleRateInHz - stFileSpec.fSampleRateInHz) > 1)
+    {
+        cout << "Impulse and audio sample rate don't match!\n";
+        CAudioFileIf::destroy(phAudioFile);
+        CAudioFileIf::destroy(phAudioOutputFile);
+        CAudioFileIf::destroy(phImpluseFile);
+        return -1;
+    }
+
+    if (!phImpluseFile->isOpen())
+    {
+        cout << "Impulse file open error!";
+
+        CAudioFileIf::destroy(phAudioFile);
+        CAudioFileIf::destroy(phAudioOutputFile);
+        CAudioFileIf::destroy(phImpluseFile);
+        return -1;
+    }
+
+    phImpluseFile->readData(ppfImpulse, iImpulseLength);
+
+    if (stIrSpec.iNumChannels == stFileSpec.iNumChannels)
+    {
+        pphFastConv = new CFastConv* [stOutputFileSpec.iNumChannels];
+        for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+        {
+            pphFastConv[i] = new CFastConv;
+            pphFastConv[i]->init(ppfImpulse[i], static_cast<int>(iImpulseLength), iFastConvBlockLength, eCompMode);
+        }
+    }
+    else if (stFileSpec.iNumChannels == 1)
+    {
+        stOutputFileSpec.iNumChannels = stIrSpec.iNumChannels;
+        pphFastConv = new CFastConv * [stOutputFileSpec.iNumChannels];
+        for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+        {
+            pphFastConv[i] = new CFastConv;
+            pphFastConv[i]->init(ppfImpulse[i], static_cast<int>(iImpulseLength), iFastConvBlockLength, eCompMode);
+        }
+    }
+    else if (stIrSpec.iNumChannels == 1)
+    {
+        pphFastConv = new CFastConv * [stOutputFileSpec.iNumChannels];
+        for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+        {
+            pphFastConv[i] = new CFastConv;
+            pphFastConv[i]->init(ppfImpulse[0], static_cast<int>(iImpulseLength), iFastConvBlockLength, eCompMode);
+        }
+    }
+    else
+    {
+        cout << "Impulse and input audio channel don't match and neither of which is mono.\n";
+        return -1;
+    }
+
+
+
+    CAudioFileIf::destroy(phImpluseFile);
+
+    for (int i = 0; i < stIrSpec.iNumChannels; i++)
+    {
+        delete[] ppfImpulse[i];
+    }
+    delete[] ppfImpulse;
+
+    phAudioOutputFile->openFile(sOutputFilePath, CAudioFileIf::kFileWrite, &stOutputFileSpec);
+
+    
+    if (!phAudioOutputFile->isOpen())
     {
         cout << "Output file cannot be initialized!";
 
@@ -120,48 +191,87 @@ int main(int argc, char* argv[])
         CAudioFileIf::destroy(phAudioOutputFile);
         return -1;
     }
+    
     ////////////////////////////////////////////////////////////////////////////
-    CVibrato::create(pCVibrato);
-    pCVibrato->init(fModWidthInSec, stFileSpec.fSampleRateInHz, iNumChannels);
 
     // allocate memory
     ppfInputAudio = new float* [stFileSpec.iNumChannels];
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
         ppfInputAudio[i] = new float[kBlockSize];
 
-    ppfOutputAudio = new float* [stFileSpec.iNumChannels];
-    for (int i = 0; i < stFileSpec.iNumChannels; i++)
+    ppfOutputAudio = new float* [stOutputFileSpec.iNumChannels];
+    ppfFlushBuffer = new float* [stOutputFileSpec.iNumChannels];
+    for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+    {
         ppfOutputAudio[i] = new float[kBlockSize];
+        ppfFlushBuffer[i] = new float[iFlushBufferLength];
+    }
+        
 
-    // Set parameters of vibrato
-    pCVibrato->setParam(CVibrato::kParamModFreqInHz, fModFrequencyInHz);
-    pCVibrato->setParam(CVibrato::kParamModWidthInS, fModWidthInSec);
 
+
+    time = clock();
     // processing
+    int iBlockCount = 0;
     while (!phAudioFile->isEof())
     {
         phAudioFile->readData(ppfInputAudio, iNumFrames);
-        pCVibrato->process(ppfInputAudio, ppfOutputAudio, iNumFrames);
+
+        for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+        {
+            if (stFileSpec.iNumChannels == 1)
+            {
+                pphFastConv[i]->process(ppfOutputAudio[i],ppfInputAudio[0],iNumFrames);
+            }
+            else
+            {
+                pphFastConv[i]->process(ppfOutputAudio[i], ppfInputAudio[i], iNumFrames);
+            }
+        }
+        if (bUseFastConv && iBlockCount < iFastConvBlockLength / kBlockSize)
+        {
+            iBlockCount++;
+            continue;
+        }
         phAudioOutputFile->writeData(ppfOutputAudio, iNumFrames);
     }
+    
+
+    for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+    {
+        pphFastConv[i]->flushBuffer(ppfFlushBuffer[i]);
+    }
+
+    phAudioOutputFile->writeData(ppfFlushBuffer, iFlushBufferLength);
+
+
     phAudioFile->getFileSpec(stFileSpec);
 
-
-    cout << "\nreading/writing done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
+    cout << "\nProcessing of convolution done in: \t" << (clock() - time) * 1.F / CLOCKS_PER_SEC << " seconds." << endl;
 
     //////////////////////////////////////////////////////////////////////////////
     // clean-up
     CAudioFileIf::destroy(phAudioFile);
     CAudioFileIf::destroy(phAudioOutputFile);
-    CVibrato::destroy(pCVibrato);
+
+    
+    for (int i = 0; i < stOutputFileSpec.iNumChannels; i++)
+    {
+        delete pphFastConv[i];
+        delete[] ppfFlushBuffer[i];
+        delete[] ppfOutputAudio[i];
+    }
+
 
     for (int i = 0; i < stFileSpec.iNumChannels; i++)
     {
         delete[] ppfInputAudio[i];
-        delete[] ppfOutputAudio[i];
     }
+    delete[] pphFastConv;
+    delete[] ppfFlushBuffer;
     delete[] ppfInputAudio;
     delete[] ppfOutputAudio;
+    pphFastConv = 0;
     ppfInputAudio = 0;
     ppfOutputAudio = 0;
 
