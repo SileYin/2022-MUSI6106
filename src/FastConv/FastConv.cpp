@@ -88,7 +88,7 @@ public:
 
         pfComplexTemp = new CFft::complex_t[2 * m_iBlockLength];
 
-        pfFFTRealTemp = new float[m_iBlockLength + 1]; //Why am I doing this? Looks like FFT split real imag would corrupt the heap memory when block length is very short.
+        pfFFTRealTemp = new float[m_iBlockLength + 1]; 
         pfFFTImagTemp = new float[m_iBlockLength + 1];
         pfCurrentBlockFFTReal = new float[m_iBlockLength + 1];
         pfCurrentBlockFFTImag = new float[m_iBlockLength + 1];
@@ -164,8 +164,6 @@ public:
             assert(m_iReadBlockIdx < m_iBlockNum);
             assert(m_iWriteBlockIdx < m_iBlockNum);
 
-            //m_ppfInputBlockBuffer[m_iWriteBlockIdx][m_iWriteIdx + m_iBlockLength] = pfInputBuffer[i];
-            //m_ppfInputBlockBuffer[m_iNextBlockIdx][m_iWriteIdx] = pfInputBuffer[i];
 
             m_pfInputBlockBuffer[m_iWriteIdx + m_iBlockLength] = pfInputBuffer[i];
 
