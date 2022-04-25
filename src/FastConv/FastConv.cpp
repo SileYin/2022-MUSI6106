@@ -287,6 +287,7 @@ Error_t CFastConv::reset()
         return Error_t::kFunctionIllegalCallError;
     delete pImpl;
     pImpl = 0;
+    bIsInitialized = false;
     return Error_t::kNoError;
 }
 
