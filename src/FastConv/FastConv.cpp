@@ -262,8 +262,17 @@ CFastConv::~CFastConv( void )
 Error_t CFastConv::init(float *pfImpulseResponse, int iLengthOfIr, int iBlockLength /*= 8192*/, ConvCompMode_t eCompMode /*= kFreqDomain*/)
 {
     if (bIsInitialized)
-        return Error_t::kFunctionIllegalCallError;
+        reset();
 
+    if (!pfImpulseResponse)
+        return Error_t::kFunctionInvalidArgsError;
+
+    if (iLengthOfIr <= 0)
+        return Error_t::kFunctionInvalidArgsError;
+
+    if (iBlockLength <= 0 || iBlockLength != (iBlockLength&(-iBlockLength)))
+        return Error_t::kFunctionInvalidArgsError;
+    
     if (eCompMode == ConvCompMode_t::kTimeDomain)
     {
         pImpl = new CConvTimeDomain(pfImpulseResponse, iLengthOfIr, iBlockLength);
@@ -284,7 +293,7 @@ Error_t CFastConv::init(float *pfImpulseResponse, int iLengthOfIr, int iBlockLen
 Error_t CFastConv::reset()
 {
     if (!bIsInitialized)
-        return Error_t::kFunctionIllegalCallError;
+        return Error_t::kNotInitializedError;
     delete pImpl;
     pImpl = 0;
     bIsInitialized = false;
@@ -294,7 +303,7 @@ Error_t CFastConv::reset()
 Error_t CFastConv::process (float* pfOutputBuffer, const float *pfInputBuffer, int iLengthOfBuffers )
 {
     if (!bIsInitialized)
-        return Error_t::kFunctionIllegalCallError;
+        return Error_t::kNotInitializedError;
     pImpl->process(pfOutputBuffer, pfInputBuffer, iLengthOfBuffers);
     return Error_t::kNoError;
 }
